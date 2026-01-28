@@ -1,15 +1,20 @@
 {
-  "name": "Arcanine #77",
-  "description": "A Rare Pokemon NFT.",
-  "image": "ipfs://QmrareArcanineHash",
+  "name": "Charmander #77",
+  "description": "Lizard Pokemon whose tail flame indicates its health. This is a Common Pokemon NFT with power level 26.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/4",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Charmander"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Rare"
+      "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 4
+      "value": 3
     },
     {
       "trait_type": "Type",
@@ -17,7 +22,11 @@
     },
     {
       "trait_type": "Level",
-      "value": 41
+      "value": 26
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 4
     }
   ]
 }

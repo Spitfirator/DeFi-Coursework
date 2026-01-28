@@ -23,31 +23,31 @@ async function main() {
             { name: "Rayquaza", type: "Dragon/Flying", image: "ipfs://QmlegendaryRayquazaHash" },
             { name: "Arceus", type: "Normal", image: "ipfs://QmlegendaryArceusHash" },
             { name: "Giratina", type: "Ghost/Dragon", image: "ipfs://QmlegendaryGiratinaHash" }
-        ],
+
         rare: [
-            { name: "Charizard", type: "Fire/Flying", image: "ipfs://QmrareCharizardHash" },
-            { name: "Blastoise", type: "Water", image: "ipfs://QmrareBlastoiseHash" },
-            { name: "Venusaur", type: "Grass/Poison", image: "ipfs://QmrareVenusaurHash" },
-            { name: "Gengar", type: "Ghost/Poison", image: "ipfs://QmrareGengarHash" },
-            { name: "Dragonite", type: "Dragon/Flying", image: "ipfs://QmrareDragoniteHash" },
-            { name: "Gyarados", type: "Water/Flying", image: "ipfs://QmrareGyaradosHash" },
-            { name: "Alakazam", type: "Psychic", image: "ipfs://QmrareAlakazamHash" },
-            { name: "Machamp", type: "Fighting", image: "ipfs://QmrareMachampHash" },
-            { name: "Snorlax", type: "Normal", image: "ipfs://QmrareSnorlaxHash" },
-            { name: "Arcanine", type: "Fire", image: "ipfs://QmrareArcanineHash" }
-        ],
-        common: [
-            { name: "Pikachu", type: "Electric", image: "ipfs://QmcommonPikachuHash" },
-            { name: "Bulbasaur", type: "Grass/Poison", image: "ipfs://QmcommonBulbasaurHash" },
-            { name: "Charmander", type: "Fire", image: "ipfs://QmcommonCharmanderHash" },
-            { name: "Squirtle", type: "Water", image: "ipfs://QmcommonSquirtleHash" },
-            { name: "Pidgey", type: "Normal/Flying", image: "ipfs://QmcommonPidgeyHash" },
-            { name: "Rattata", type: "Normal", image: "ipfs://QmcommonRattataHash" },
-            { name: "Zubat", type: "Poison/Flying", image: "ipfs://QmcommonZubatHash" },
-            { name: "Geodude", type: "Rock/Ground", image: "ipfs://QmcommonGeodudeHash" },
-            { name: "Magikarp", type: "Water", image: "ipfs://QmcommonMagikarpHash" },
-            { name: "Caterpie", type: "Bug", image: "ipfs://QmcommonCaterpieHash" }
-        ]
+                { name: "Charizard", type: "Fire/Flying", image: "ipfs://QmrareCharizardHash" },
+                { name: "Blastoise", type: "Water", image: "ipfs://QmrareBlastoiseHash" },
+                { name: "Venusaur", type: "Grass/Poison", image: "ipfs://QmrareVenusaurHash" },
+                { name: "Gengar", type: "Ghost/Poison", image: "ipfs://QmrareGengarHash" },
+                { name: "Dragonite", type: "Dragon/Flying", image: "ipfs://QmrareDragoniteHash" },
+                { name: "Gyarados", type: "Water/Flying", image: "ipfs://QmrareGyaradosHash" },
+                { name: "Alakazam", type: "Psychic", image: "ipfs://QmrareAlakazamHash" },
+                { name: "Machamp", type: "Fighting", image: "ipfs://QmrareMachampHash" },
+                { name: "Snorlax", type: "Normal", image: "ipfs://QmrareSnorlaxHash" },
+                { name: "Arcanine", type: "Fire", image: "ipfs://QmrareArcanineHash" }
+            ],
+            common: [
+                { name: "Pikachu", type: "Electric", image: "ipfs://QmcommonPikachuHash" },
+                { name: "Bulbasaur", type: "Grass/Poison", image: "ipfs://QmcommonBulbasaurHash" },
+                { name: "Charmander", type: "Fire", image: "ipfs://QmcommonCharmanderHash" },
+                { name: "Squirtle", type: "Water", image: "ipfs://QmcommonSquirtleHash" },
+                { name: "Pidgey", type: "Normal/Flying", image: "ipfs://QmcommonPidgeyHash" },
+                { name: "Rattata", type: "Normal", image: "ipfs://QmcommonRattataHash" },
+                { name: "Zubat", type: "Poison/Flying", image: "ipfs://QmcommonZubatHash" },
+                { name: "Geodude", type: "Rock/Ground", image: "ipfs://QmcommonGeodudeHash" },
+                { name: "Magikarp", type: "Water", image: "ipfs://QmcommonMagikarpHash" },
+                { name: "Caterpie", type: "Bug", image: "ipfs://QmcommonCaterpieHash" }
+            ]
     };
 
     console.log("Generating 100 metadata files...");

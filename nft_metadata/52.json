@@ -1,23 +1,32 @@
 {
-  "name": "Magikarp #52",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonMagikarpHash",
+  "name": "Geodude #52",
+  "description": "Rock Pokemon with arms that can throw punches. This is a Common Pokemon NFT with power level 12.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/74.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/74",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Geodude"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Rock/Ground"
     },
     {
       "trait_type": "Level",
-      "value": 16
+      "value": 12
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 74
     }
   ]
 }

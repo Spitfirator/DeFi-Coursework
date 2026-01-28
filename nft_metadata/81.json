@@ -1,8 +1,13 @@
 {
-  "name": "Geodude #81",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonGeodudeHash",
+  "name": "Zubat #81",
+  "description": "Bat Pokemon that lives in caves. This is a Common Pokemon NFT with power level 28.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/41.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/41",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Zubat"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Rock/Ground"
+      "value": "Poison/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 22
+      "value": 28
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 41
     }
   ]
 }

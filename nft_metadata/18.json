@@ -1,23 +1,32 @@
 {
-  "name": "Charmander #18",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCharmanderHash",
+  "name": "Salamence #18",
+  "description": "Dragon Pokemon with a fierce temper. This is a Rare Pokemon NFT with power level 60.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/373.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/373",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Salamence"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Fire"
+      "value": "Dragon/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 26
+      "value": 60
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 373
     }
   ]
 }

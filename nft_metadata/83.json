@@ -1,23 +1,32 @@
 {
-  "name": "Bulbasaur #83",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonBulbasaurHash",
+  "name": "Magikarp #83",
+  "description": "Fish Pokemon known for being weak but can evolve into Gyarados. This is a Common Pokemon NFT with power level 29.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/129.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/129",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Magikarp"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 3
     },
     {
       "trait_type": "Type",
-      "value": "Grass/Poison"
+      "value": "Water"
     },
     {
       "trait_type": "Level",
-      "value": 38
+      "value": 29
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 129
     }
   ]
 }

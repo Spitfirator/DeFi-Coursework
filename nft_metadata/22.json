@@ -1,23 +1,32 @@
 {
-  "name": "Mewtwo #22",
-  "description": "A Legendary Pokemon NFT.",
-  "image": "ipfs://QmlegendaryMewtwoHash",
+  "name": "Venusaur #22",
+  "description": "Grass-type with a giant flower that emits a soothing aroma. This is a Rare Pokemon NFT with power level 66.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/3",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Venusaur"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Legendary"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 5
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Psychic"
+      "value": "Grass/Poison"
     },
     {
       "trait_type": "Level",
-      "value": 90
+      "value": 66
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 3
     }
   ]
 }

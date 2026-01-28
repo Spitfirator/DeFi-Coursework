@@ -1,8 +1,13 @@
 {
-  "name": "Magikarp #54",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonMagikarpHash",
+  "name": "Caterpie #54",
+  "description": "Worm Pokemon that loves to eat leaves. This is a Common Pokemon NFT with power level 14.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/10",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Caterpie"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Bug"
     },
     {
       "trait_type": "Level",
-      "value": 23
+      "value": 14
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 10
     }
   ]
 }

@@ -1,23 +1,32 @@
 {
-  "name": "Zubat #37",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonZubatHash",
+  "name": "Geodude #37",
+  "description": "Rock Pokemon with arms that can throw punches. This is a Common Pokemon NFT with power level 4.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/74.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/74",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Geodude"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Poison/Flying"
+      "value": "Rock/Ground"
     },
     {
       "trait_type": "Level",
-      "value": 38
+      "value": 4
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 74
     }
   ]
 }

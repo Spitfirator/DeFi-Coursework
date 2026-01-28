@@ -1,23 +1,32 @@
 {
-  "name": "Charmander #49",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCharmanderHash",
+  "name": "Pidgey #49",
+  "description": "Tiny Bird Pokemon found in grassy areas. This is a Common Pokemon NFT with power level 11.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/16",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Pidgey"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Fire"
+      "value": "Normal/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 21
+      "value": 11
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 16
     }
   ]
 }

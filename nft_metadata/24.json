@@ -1,8 +1,13 @@
 {
-  "name": "Snorlax #24",
-  "description": "A Rare Pokemon NFT.",
-  "image": "ipfs://QmrareSnorlaxHash",
+  "name": "Dragonite #24",
+  "description": "Pseudo-legendary Dragon-type known for its kindness. This is a Rare Pokemon NFT with power level 69.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/149.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/149",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Dragonite"
+    },
     {
       "trait_type": "Rarity",
       "value": "Rare"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Normal"
+      "value": "Dragon/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 56
+      "value": 69
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 149
     }
   ]
 }

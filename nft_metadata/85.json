@@ -1,23 +1,32 @@
 {
-  "name": "Caterpie #85",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCaterpieHash",
+  "name": "Eevee #85",
+  "description": "Evolution Pokemon with unstable genetic code. This is a Common Pokemon NFT with power level 30.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/133",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Eevee"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Bug"
+      "value": "Normal"
     },
     {
       "trait_type": "Level",
-      "value": 27
+      "value": 30
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 133
     }
   ]
 }

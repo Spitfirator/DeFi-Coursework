@@ -1,15 +1,20 @@
 {
-  "name": "Squirtle #68",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonSquirtleHash",
+  "name": "Magikarp #68",
+  "description": "Fish Pokemon known for being weak but can evolve into Gyarados. This is a Common Pokemon NFT with power level 21.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/129.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/129",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Magikarp"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 3
     },
     {
       "trait_type": "Type",
@@ -17,7 +22,11 @@
     },
     {
       "trait_type": "Level",
-      "value": 22
+      "value": 21
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 129
     }
   ]
 }

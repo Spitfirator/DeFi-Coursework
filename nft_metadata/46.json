@@ -1,15 +1,20 @@
 {
   "name": "Bulbasaur #46",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonBulbasaurHash",
+  "description": "Seed Pokemon that grows with its plant bulb. This is a Common Pokemon NFT with power level 9.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/1",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Bulbasaur"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
@@ -17,7 +22,11 @@
     },
     {
       "trait_type": "Level",
-      "value": 36
+      "value": 9
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 1
     }
   ]
 }

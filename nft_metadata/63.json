@@ -1,8 +1,13 @@
 {
-  "name": "Zubat #63",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonZubatHash",
+  "name": "Squirtle #63",
+  "description": "Tiny Turtle Pokemon that withdraws into its shell. This is a Common Pokemon NFT with power level 18.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/7",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Squirtle"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Poison/Flying"
+      "value": "Water"
     },
     {
       "trait_type": "Level",
       "value": 18
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 7
     }
   ]
 }

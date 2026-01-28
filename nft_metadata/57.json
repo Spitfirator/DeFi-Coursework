@@ -1,8 +1,13 @@
 {
-  "name": "Squirtle #57",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonSquirtleHash",
+  "name": "Psyduck #57",
+  "description": "Duck Pokemon with constant headaches. This is a Common Pokemon NFT with power level 15.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/54.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/54",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Psyduck"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -17,7 +22,11 @@
     },
     {
       "trait_type": "Level",
-      "value": 31
+      "value": 15
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 54
     }
   ]
 }

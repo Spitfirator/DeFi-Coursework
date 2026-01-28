@@ -1,22 +1,16 @@
-# Node modules
+# Node
 /node_modules
 
-# Compilation output
-/dist
+# Hardhat build output
+/artifacts
+/cache
+/contracts/artifacts
 
-# pnpm deploy output
-/bundle
-
-# Hardhat build artifacts (CORRECT)
- /artifacts
- /cache
-
-# Typechain output
+# Typechain
 /typechain-types
 
-# Hardhat coverage reports
+# Coverage
 /coverage
 
 # macOS
 .DS_Store
-

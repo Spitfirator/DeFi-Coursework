@@ -1,23 +1,32 @@
 {
-  "name": "Squirtle #2",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonSquirtleHash",
+  "name": "Rayquaza #2",
+  "description": "Sky High Pokemon that lives in the ozone layer. This is a Legendary Pokemon NFT with power level 88.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/384.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/384",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Rayquaza"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Legendary"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 5
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Dragon/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 2
+      "value": 88
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 384
     }
   ]
 }

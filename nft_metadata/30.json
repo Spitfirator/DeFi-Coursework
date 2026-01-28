@@ -1,8 +1,13 @@
 {
-  "name": "Pidgey #30",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonPidgeyHash",
+  "name": "Pikachu #30",
+  "description": "Mouse Pokemon that stores electricity in its cheeks. This is a Common Pokemon NFT with power level 1.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/25",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Pikachu"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Normal/Flying"
+      "value": "Electric"
     },
     {
       "trait_type": "Level",
-      "value": 4
+      "value": 1
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 25
     }
   ]
 }

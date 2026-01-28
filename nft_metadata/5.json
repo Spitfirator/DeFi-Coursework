@@ -1,23 +1,32 @@
 {
-  "name": "Charmander #5",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCharmanderHash",
+  "name": "Charizard #5",
+  "description": "Powerful Fire-type that can melt anything with its flames. This is a Rare Pokemon NFT with power level 40.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/6",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Charizard"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Fire"
+      "value": "Fire/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 27
+      "value": 40
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 6
     }
   ]
 }

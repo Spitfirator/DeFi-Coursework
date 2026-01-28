@@ -1,8 +1,13 @@
 {
-  "name": "Pikachu #66",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonPikachuHash",
+  "name": "Zubat #66",
+  "description": "Bat Pokemon that lives in caves. This is a Common Pokemon NFT with power level 20.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/41.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/41",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Zubat"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Electric"
+      "value": "Poison/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 34
+      "value": 20
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 41
     }
   ]
 }

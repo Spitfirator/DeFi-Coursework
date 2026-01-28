@@ -1,8 +1,13 @@
 {
-  "name": "Magikarp #75",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonMagikarpHash",
+  "name": "Pikachu #75",
+  "description": "Mouse Pokemon that stores electricity in its cheeks. This is a Common Pokemon NFT with power level 25.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/25",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Pikachu"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
@@ -13,11 +18,15 @@
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Electric"
     },
     {
       "trait_type": "Level",
-      "value": 35
+      "value": 25
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 25
     }
   ]
 }

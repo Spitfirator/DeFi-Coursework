@@ -1,23 +1,32 @@
 {
-  "name": "Charmander #28",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCharmanderHash",
+  "name": "Snorlax #28",
+  "description": "Sleeping Pokemon that blocks paths while napping. This is a Rare Pokemon NFT with power level 75.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/143",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Snorlax"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Fire"
+      "value": "Normal"
     },
     {
       "trait_type": "Level",
-      "value": 22
+      "value": 75
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 143
     }
   ]
 }

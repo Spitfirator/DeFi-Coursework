@@ -1,23 +1,32 @@
 {
-  "name": "Charizard #34",
-  "description": "A Rare Pokemon NFT.",
-  "image": "ipfs://QmrareCharizardHash",
+  "name": "Pidgey #34",
+  "description": "Tiny Bird Pokemon found in grassy areas. This is a Common Pokemon NFT with power level 3.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/16",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Pidgey"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Rare"
+      "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 4
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Fire/Flying"
+      "value": "Normal/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 45
+      "value": 3
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 16
     }
   ]
 }

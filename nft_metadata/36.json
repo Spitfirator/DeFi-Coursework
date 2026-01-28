@@ -1,23 +1,32 @@
 {
-  "name": "Dragonite #36",
-  "description": "A Rare Pokemon NFT.",
-  "image": "ipfs://QmrareDragoniteHash",
+  "name": "Zubat #36",
+  "description": "Bat Pokemon that lives in caves. This is a Common Pokemon NFT with power level 4.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/41.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/41",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Zubat"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Rare"
+      "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 4
+      "value": 1
     },
     {
       "trait_type": "Type",
-      "value": "Dragon/Flying"
+      "value": "Poison/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 79
+      "value": 4
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 41
     }
   ]
 }

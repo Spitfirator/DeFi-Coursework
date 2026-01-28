@@ -1,23 +1,32 @@
 {
-  "name": "Squirtle #7",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonSquirtleHash",
+  "name": "Venusaur #7",
+  "description": "Grass-type with a giant flower that emits a soothing aroma. This is a Rare Pokemon NFT with power level 43.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/3",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Venusaur"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Grass/Poison"
     },
     {
       "trait_type": "Level",
-      "value": 33
+      "value": 43
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 3
     }
   ]
 }

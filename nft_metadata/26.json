@@ -1,23 +1,32 @@
 {
-  "name": "Pidgey #26",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonPidgeyHash",
+  "name": "Alakazam #26",
+  "description": "Psi Pokemon with an IQ of 5000. This is a Rare Pokemon NFT with power level 72.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/65.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/65",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Alakazam"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Normal/Flying"
+      "value": "Psychic"
     },
     {
       "trait_type": "Level",
-      "value": 34
+      "value": 72
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 65
     }
   ]
 }

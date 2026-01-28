@@ -1,15 +1,20 @@
 {
-  "name": "Bulbasaur #74",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonBulbasaurHash",
+  "name": "Oddish #74",
+  "description": "Weed Pokemon that buries itself during the day. This is a Common Pokemon NFT with power level 24.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/43.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/43",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Oddish"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 3
     },
     {
       "trait_type": "Type",
@@ -17,7 +22,11 @@
     },
     {
       "trait_type": "Level",
-      "value": 1
+      "value": 24
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 43
     }
   ]
 }

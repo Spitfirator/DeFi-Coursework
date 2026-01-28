@@ -1,23 +1,32 @@
 {
-  "name": "Zubat #14",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonZubatHash",
+  "name": "Arcanine #14",
+  "description": "Legendary Pokemon known for its speed and majesty. This is a Rare Pokemon NFT with power level 54.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/59.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/59",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Arcanine"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Poison/Flying"
+      "value": "Fire"
     },
     {
       "trait_type": "Level",
-      "value": 14
+      "value": 54
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 59
     }
   ]
 }

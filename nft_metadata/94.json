@@ -1,23 +1,32 @@
 {
-  "name": "Lugia #94",
-  "description": "A Legendary Pokemon NFT.",
-  "image": "ipfs://QmlegendaryLugiaHash",
+  "name": "Pidgey #94",
+  "description": "Tiny Bird Pokemon found in grassy areas. This is a Common Pokemon NFT with power level 35.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/16",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Pidgey"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Legendary"
+      "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 5
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Psychic/Flying"
+      "value": "Normal/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 97
+      "value": 35
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 16
     }
   ]
 }

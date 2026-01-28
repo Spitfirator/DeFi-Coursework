@@ -1,23 +1,32 @@
 {
-  "name": "Geodude #35",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonGeodudeHash",
+  "name": "Rattata #35",
+  "description": "Mouse Pokemon that lives anywhere. This is a Common Pokemon NFT with power level 3.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/19.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/19",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Rattata"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 3
     },
     {
       "trait_type": "Type",
-      "value": "Rock/Ground"
+      "value": "Normal"
     },
     {
       "trait_type": "Level",
-      "value": 21
+      "value": 3
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 19
     }
   ]
 }

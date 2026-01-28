@@ -13,7 +13,7 @@ async function main() {
     // using a placeholder IPFS hash or local host for baseURI
     // In a real scenario, we'd upload the 100 JSONs to IPFS first and get the CID.
     // For this demo, we'll assume a local server or placeholder.
-    const baseURI = "https://ipfs.io/ipfs/QmPlaceholderHash/";
+    const baseURI = "https://ipfs.io/ipfs/bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4/";
     const pokemonNFT = await PokemonNFT.deploy(baseURI);
     await pokemonNFT.waitForDeployment();
     const nftAddress = await pokemonNFT.getAddress();

@@ -1,23 +1,32 @@
 {
-  "name": "Caterpie #19",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCaterpieHash",
+  "name": "Garchomp #19",
+  "description": "Mach Pokemon that flies at sonic speed. This is a Rare Pokemon NFT with power level 61.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/445.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/445",
   "attributes": [
     {
+      "trait_type": "Pokemon",
+      "value": "Garchomp"
+    },
+    {
       "trait_type": "Rarity",
-      "value": "Common"
+      "value": "Rare"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 4
     },
     {
       "trait_type": "Type",
-      "value": "Bug"
+      "value": "Dragon/Ground"
     },
     {
       "trait_type": "Level",
-      "value": 28
+      "value": 61
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 445
     }
   ]
 }

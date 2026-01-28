@@ -1,23 +1,32 @@
 {
-  "name": "Squirtle #73",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonSquirtleHash",
+  "name": "Growlithe #73",
+  "description": "Puppy Pokemon that is brave and loyal. This is a Common Pokemon NFT with power level 24.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/58.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/58",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Growlithe"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Water"
+      "value": "Fire"
     },
     {
       "trait_type": "Level",
-      "value": 12
+      "value": 24
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 58
     }
   ]
 }

@@ -1,23 +1,32 @@
 {
-  "name": "Caterpie #79",
-  "description": "A Common Pokemon NFT.",
-  "image": "ipfs://QmcommonCaterpieHash",
+  "name": "Pidgey #79",
+  "description": "Tiny Bird Pokemon found in grassy areas. This is a Common Pokemon NFT with power level 27.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/16",
   "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Pidgey"
+    },
     {
       "trait_type": "Rarity",
       "value": "Common"
     },
     {
       "trait_type": "Rarity Level",
-      "value": 1
+      "value": 2
     },
     {
       "trait_type": "Type",
-      "value": "Bug"
+      "value": "Normal/Flying"
     },
     {
       "trait_type": "Level",
-      "value": 38
+      "value": 27
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 16
     }
   ]
 }
