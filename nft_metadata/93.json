@@ -1,0 +1,23 @@
+{
+  "name": "Giratina #93",
+  "description": "A Legendary Pokemon NFT.",
+  "image": "ipfs://QmlegendaryGiratinaHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Ghost/Dragon"
+    },
+    {
+      "trait_type": "Level",
+      "value": 90
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Machamp #3",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareMachampHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Fighting"
+    },
+    {
+      "trait_type": "Level",
+      "value": 51
+    }
+  ]
+}

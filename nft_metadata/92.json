@@ -1,0 +1,23 @@
+{
+  "name": "Snorlax #92",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareSnorlaxHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Normal"
+    },
+    {
+      "trait_type": "Level",
+      "value": 46
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Dragonite #99",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareDragoniteHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Dragon/Flying"
+    },
+    {
+      "trait_type": "Level",
+      "value": 56
+    }
+  ]
+}

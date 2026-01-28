@@ -1,0 +1,23 @@
+{
+  "name": "Geodude #31",
+  "description": "A Common Pokemon NFT.",
+  "image": "ipfs://QmcommonGeodudeHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Rock/Ground"
+    },
+    {
+      "trait_type": "Level",
+      "value": 12
+    }
+  ]
+}

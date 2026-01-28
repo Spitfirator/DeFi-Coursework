@@ -1,0 +1,23 @@
+{
+  "name": "Magikarp #65",
+  "description": "A Common Pokemon NFT.",
+  "image": "ipfs://QmcommonMagikarpHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Water"
+    },
+    {
+      "trait_type": "Level",
+      "value": 27
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Gengar #76",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareGengarHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Ghost/Poison"
+    },
+    {
+      "trait_type": "Level",
+      "value": 44
+    }
+  ]
+}

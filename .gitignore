@@ -7,15 +7,16 @@
 # pnpm deploy output
 /bundle
 
-# Hardhat Build Artifacts
-/artifacts
-
-# Hardhat compilation (v2) support directory
-/cache
+# Hardhat build artifacts (CORRECT)
+ /artifacts
+ /cache
 
 # Typechain output
-/types
+/typechain-types
 
 # Hardhat coverage reports
 /coverage
+
+# macOS
 .DS_Store
+

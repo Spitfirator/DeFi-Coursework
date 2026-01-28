@@ -1,0 +1,23 @@
+{
+  "name": "Charizard #6",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareCharizardHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Fire/Flying"
+    },
+    {
+      "trait_type": "Level",
+      "value": 65
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Blastoise #39",
+  "description": "A Rare Pokemon NFT.",
+  "image": "ipfs://QmrareBlastoiseHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Water"
+    },
+    {
+      "trait_type": "Level",
+      "value": 57
+    }
+  ]
+}

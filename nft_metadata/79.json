@@ -1,0 +1,23 @@
+{
+  "name": "Caterpie #79",
+  "description": "A Common Pokemon NFT.",
+  "image": "ipfs://QmcommonCaterpieHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Bug"
+    },
+    {
+      "trait_type": "Level",
+      "value": 38
+    }
+  ]
+}

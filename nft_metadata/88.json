@@ -1,0 +1,23 @@
+{
+  "name": "Mewtwo #88",
+  "description": "A Legendary Pokemon NFT.",
+  "image": "ipfs://QmlegendaryMewtwoHash",
+  "attributes": [
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Psychic"
+    },
+    {
+      "trait_type": "Level",
+      "value": 88
+    }
+  ]
+}
