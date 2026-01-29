@@ -1,0 +1,32 @@
+{
+  "name": "Giratina #4",
+  "description": "Renegade Pokemon banished to the Distortion World. This is a Legendary Pokemon NFT with power level 96.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/487.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/487",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Giratina"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Ghost/Dragon"
+    },
+    {
+      "trait_type": "Level",
+      "value": 96
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 487
+    }
+  ]
+}

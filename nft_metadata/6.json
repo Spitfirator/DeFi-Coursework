@@ -1,0 +1,32 @@
+{
+  "name": "Blastoise #6",
+  "description": "Water-type with powerful hydro cannons on its shell. This is a Rare Pokemon NFT with power level 41.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/9",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Blastoise"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Water"
+    },
+    {
+      "trait_type": "Level",
+      "value": 41
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 9
+    }
+  ]
+}

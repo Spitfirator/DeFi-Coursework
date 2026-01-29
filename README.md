@@ -140,7 +140,45 @@ npm start
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔐 Security Features
+## � IPFS Integration
+
+NFT metadata is stored on IPFS for decentralized, permanent storage following the OpenSea metadata standard.
+
+### IPFS Configuration
+- **IPFS CID**: `bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4`
+- **Gateway URL**: `https://ipfs.io/ipfs/bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4/`
+- **Pinning Service**: Pinata
+
+### Metadata Structure
+Each token's metadata follows the OpenSea/ERC721 metadata standard:
+```json
+{
+  "name": "Mewtwo #0",
+  "description": "A legendary Psychic-type Pokemon NFT",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/150",
+  "attributes": [
+    { "trait_type": "Pokemon", "value": "Mewtwo" },
+    { "trait_type": "Rarity", "value": "Legendary" },
+    { "trait_type": "Type", "value": "Psychic" },
+    { "trait_type": "Level", "value": 80 }
+  ]
+}
+```
+
+### Collection Distribution
+- **100 Total Pokemon NFTs**
+- **5 Legendary** (Tokens 0-4): Mewtwo, Lugia, Rayquaza, Arceus, Giratina
+- **25 Rare** (Tokens 5-29): Charizard, Blastoise, Venusaur, Gengar, Dragonite, etc.
+- **70 Common** (Tokens 30-99): Pikachu, Bulbasaur, Charmander, Squirtle, etc.
+
+### Uploading Your Own Metadata
+1. Modify files in `nft_metadata/` folder
+2. Upload to [Pinata](https://pinata.cloud) (free account)
+3. Update `IPFS_CID` in `scripts/deploy.js`
+4. Run deployment script
+
+## �🔐 Security Features
 
 ### 1. Reentrancy Protection
 All external calls use OpenZeppelin's `ReentrancyGuard`:

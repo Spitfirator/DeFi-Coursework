@@ -1,0 +1,32 @@
+{
+  "name": "Caterpie #69",
+  "description": "Worm Pokemon that loves to eat leaves. This is a Common Pokemon NFT with power level 22.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/10",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Caterpie"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Bug"
+    },
+    {
+      "trait_type": "Level",
+      "value": 22
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 10
+    }
+  ]
+}

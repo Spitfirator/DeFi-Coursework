@@ -1,0 +1,32 @@
+{
+  "name": "Arceus #3",
+  "description": "The Original One, said to have shaped the universe. This is a Legendary Pokemon NFT with power level 92.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/493.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/493",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Arceus"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Normal"
+    },
+    {
+      "trait_type": "Level",
+      "value": 92
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 493
+    }
+  ]
+}

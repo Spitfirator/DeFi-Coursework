@@ -1,0 +1,32 @@
+{
+  "name": "Growlithe #58",
+  "description": "Puppy Pokemon that is brave and loyal. This is a Common Pokemon NFT with power level 16.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/58.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/58",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Growlithe"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 2
+    },
+    {
+      "trait_type": "Type",
+      "value": "Fire"
+    },
+    {
+      "trait_type": "Level",
+      "value": 16
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 58
+    }
+  ]
+}

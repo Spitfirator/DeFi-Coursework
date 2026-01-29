@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, Flame, Droplet, Leaf, Brain, Ghost, Mountain, Bug, Star } from 'lucide-react';
 
@@ -14,6 +14,26 @@ const typeColors = {
   Normal: { bg: 'from-gray-400 to-gray-600', icon: Star },
 };
 
+// Pokemon name to Pokedex ID mapping for PokeAPI sprites
+const pokemonToPokedexId = {
+  'Mewtwo': 150, 'Lugia': 249, 'Rayquaza': 384, 'Arceus': 493, 'Giratina': 487,
+  'Charizard': 6, 'Blastoise': 9, 'Venusaur': 3, 'Gengar': 94, 'Dragonite': 149,
+  'Gyarados': 130, 'Alakazam': 65, 'Machamp': 68, 'Snorlax': 143, 'Arcanine': 59,
+  'Lapras': 131, 'Tyranitar': 248, 'Metagross': 376, 'Salamence': 373, 'Garchomp': 445,
+  'Pikachu': 25, 'Bulbasaur': 1, 'Charmander': 4, 'Squirtle': 7, 'Pidgey': 16,
+  'Rattata': 19, 'Zubat': 41, 'Geodude': 74, 'Magikarp': 129, 'Caterpie': 10,
+  'Eevee': 133, 'Jigglypuff': 39, 'Psyduck': 54, 'Growlithe': 58, 'Oddish': 43
+};
+
+// Get Pokemon image URL from PokeAPI sprites
+const getPokemonImageUrl = (name) => {
+  const pokedexId = pokemonToPokedexId[name];
+  if (pokedexId) {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokedexId}.png`;
+  }
+  return null;
+};
+
 const rarityStyles = {
   Common: 'border-gray-500',
   Uncommon: 'border-green-500',
@@ -25,6 +45,10 @@ function PokemonCard({ pokemon, listing, auction, showActions = false }) {
   const { tokenId, name, pokemonType, rarity, hp, attack, defense, speed } = pokemon;
   const typeConfig = typeColors[pokemonType] || typeColors.Normal;
   const TypeIcon = typeConfig.icon;
+  const [imageError, setImageError] = useState(false);
+  
+  // Get Pokemon image from PokeAPI sprites (IPFS metadata points to these)
+  const imageUrl = getPokemonImageUrl(name);
 
   return (
     <div className={`relative bg-gray-900 rounded-xl overflow-hidden border-2 ${rarityStyles[rarity] || 'border-gray-700'} hover:scale-105 transition-transform duration-300`}>
@@ -40,10 +64,25 @@ function PokemonCard({ pokemon, listing, auction, showActions = false }) {
         </span>
       </div>
 
-      {/* Card Image/Type Background */}
-      <div className={`h-40 bg-gradient-to-br ${typeConfig.bg} flex items-center justify-center`}>
-        <TypeIcon size={64} className="text-white/30" />
-        <span className="absolute text-6xl font-bold text-white/20">{name.charAt(0)}</span>
+      {/* Card Image - Uses PokeAPI official artwork (same as IPFS metadata) */}
+      <div className={`h-48 bg-gradient-to-br ${typeConfig.bg} flex items-center justify-center relative overflow-hidden`}>
+        {imageUrl && !imageError ? (
+          <img 
+            src={imageUrl} 
+            alt={name}
+            className="h-40 w-40 object-contain z-10 drop-shadow-lg"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <>
+            <TypeIcon size={64} className="text-white/30" />
+            <span className="absolute text-6xl font-bold text-white/20">{name.charAt(0)}</span>
+          </>
+        )}
+        {/* Background glow effect for legendary/rare */}
+        {(rarity === 'Legendary' || rarity === 'Rare') && (
+          <div className={`absolute inset-0 ${rarity === 'Legendary' ? 'bg-yellow-400/10' : 'bg-blue-400/10'} animate-pulse`} />
+        )}
       </div>
 
       {/* Card Content */}

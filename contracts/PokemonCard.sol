@@ -29,6 +29,7 @@ contract PokemonCard is
     uint256 private _nextTokenId;
     uint256 public maxSupply;
     uint256 public mintPrice;
+    string private _baseTokenURI;
 
     // ============ Pokemon Metadata Structure ============
     struct PokemonStats {
@@ -60,6 +61,7 @@ contract PokemonCard is
     event Withdrawal(address indexed to, uint256 amount);
     event EmergencyStop(address indexed by);
     event EmergencyResume(address indexed by);
+    event BaseURIUpdated(string oldURI, string newURI);
 
     // ============ Errors ============
     error MaxSupplyReached();
@@ -223,6 +225,23 @@ contract PokemonCard is
         uint256 oldSupply = maxSupply;
         maxSupply = newMaxSupply;
         emit MaxSupplyUpdated(oldSupply, newMaxSupply);
+    }
+
+    /**
+     * @dev Set base URI for IPFS metadata
+     * @param newBaseURI The IPFS gateway URL (e.g., "https://ipfs.io/ipfs/CID/")
+     */
+    function setBaseURI(string memory newBaseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        string memory oldURI = _baseTokenURI;
+        _baseTokenURI = newBaseURI;
+        emit BaseURIUpdated(oldURI, newBaseURI);
+    }
+
+    /**
+     * @dev Get the current base URI
+     */
+    function getBaseURI() external view returns (string memory) {
+        return _baseTokenURI;
     }
 
     /**

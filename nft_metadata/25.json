@@ -1,0 +1,32 @@
+{
+  "name": "Gyarados #25",
+  "description": "Atrocious Pokemon with a violent temper. This is a Rare Pokemon NFT with power level 71.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/130.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/130",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Gyarados"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Water/Flying"
+    },
+    {
+      "trait_type": "Level",
+      "value": 71
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 130
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Eevee #40",
+  "description": "Evolution Pokemon with unstable genetic code. This is a Common Pokemon NFT with power level 6.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/133",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Eevee"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 2
+    },
+    {
+      "trait_type": "Type",
+      "value": "Normal"
+    },
+    {
+      "trait_type": "Level",
+      "value": 6
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 133
+    }
+  ]
+}
