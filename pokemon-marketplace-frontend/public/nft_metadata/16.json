@@ -1,0 +1,32 @@
+{
+  "name": "Tyranitar #16",
+  "description": "Armor Pokemon that can topple mountains. This is a Rare Pokemon NFT with power level 57.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/248.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/248",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Tyranitar"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Rock/Dark"
+    },
+    {
+      "trait_type": "Level",
+      "value": 57
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 248
+    }
+  ]
+}

@@ -155,12 +155,7 @@ contract PokemonMarketplace is ReentrancyGuard, Ownable, Pausable {
         if (price == 0) revert PriceMustBeAboveZero();
 
         // Check Rarity Restrictions
-        try PokemonNFT(nftContract).pokemonData(tokenId) returns (string memory, string memory, uint8 rarity, uint32) {
-            // Legendary (5) cannot be fixed price
-            if (rarity == 5) revert InvalidSaleTypeForRarity();
-        } catch {
-            // Ignore if not a PokemonNFT contract (generic compatibility)
-        }
+
 
         listings[nftContract][tokenId] = Listing(msg.sender, price);
         emit ItemListed(nftContract, tokenId, msg.sender, price);
@@ -390,14 +385,6 @@ contract PokemonMarketplace is ReentrancyGuard, Ownable, Pausable {
         if (startingPrice == 0) revert PriceMustBeAboveZero();
         if (duration < 60) revert DurationTooShort(); // Minimum 1 minute
 
-        // Check Rarity Restrictions
-        try PokemonNFT(nftContract).pokemonData(tokenId) returns (string memory, string memory, uint8 rarity, uint32) {
-            // Common (1-3) cannot be auctioned (Only Rare(4) and Legendary(5))
-            if (rarity < 4) revert InvalidSaleTypeForRarity();
-        } catch {
-            // Ignore
-        }
-
         auctions[nftContract][tokenId] = Auction({
             seller: msg.sender,
             startingPrice: startingPrice,
@@ -499,14 +486,6 @@ contract PokemonMarketplace is ReentrancyGuard, Ownable, Pausable {
     {
         if (startPrice <= endPrice) revert InvalidPriceRange();
         if (duration < 60) revert DurationTooShort(); // Minimum 1 minute
-
-        // Check Rarity Restrictions
-        try PokemonNFT(nftContract).pokemonData(tokenId) returns (string memory, string memory, uint8 rarity, uint32) {
-            // Common (1-3) cannot be auctioned (Only Rare(4) and Legendary(5))
-            if (rarity < 4) revert InvalidSaleTypeForRarity();
-        } catch {
-            // Ignore
-        }
 
         dutchAuctions[nftContract][tokenId] = DutchAuction({
             seller: msg.sender,

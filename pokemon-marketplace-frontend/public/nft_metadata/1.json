@@ -1,0 +1,32 @@
+{
+  "name": "Lugia #1",
+  "description": "Guardian of the seas with immense psychic power. This is a Legendary Pokemon NFT with power level 84.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/249.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/249",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Lugia"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Psychic/Flying"
+    },
+    {
+      "trait_type": "Level",
+      "value": 84
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 249
+    }
+  ]
+}

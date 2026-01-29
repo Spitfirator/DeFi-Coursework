@@ -1,0 +1,32 @@
+{
+  "name": "Zubat #96",
+  "description": "Bat Pokemon that lives in caves. This is a Common Pokemon NFT with power level 36.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/41.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/41",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Zubat"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Poison/Flying"
+    },
+    {
+      "trait_type": "Level",
+      "value": 36
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 41
+    }
+  ]
+}
