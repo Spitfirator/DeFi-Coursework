@@ -1,0 +1,333 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        { "internalType": "address", "name": "_pokemonContract", "type": "address" },
+        { "internalType": "uint256", "name": "_platformFee", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    { "inputs": [], "name": "AuctionAlreadyFinalized", "type": "error" },
+    { "inputs": [], "name": "AuctionEnded", "type": "error" },
+    { "inputs": [], "name": "AuctionNotActive", "type": "error" },
+    { "inputs": [], "name": "AuctionStillActive", "type": "error" },
+    { "inputs": [], "name": "BidTooLow", "type": "error" },
+    { "inputs": [], "name": "CannotBidOnOwnAuction", "type": "error" },
+    { "inputs": [], "name": "CommitmentAlreadyRevealed", "type": "error" },
+    { "inputs": [], "name": "CommitmentNotFound", "type": "error" },
+    { "inputs": [], "name": "FeeTooHigh", "type": "error" },
+    { "inputs": [], "name": "InsufficientPayment", "type": "error" },
+    { "inputs": [], "name": "InvalidDuration", "type": "error" },
+    { "inputs": [], "name": "InvalidPrice", "type": "error" },
+    { "inputs": [], "name": "InvalidReveal", "type": "error" },
+    { "inputs": [], "name": "ListingNotActive", "type": "error" },
+    { "inputs": [], "name": "NoPendingWithdrawal", "type": "error" },
+    { "inputs": [], "name": "NotSeller", "type": "error" },
+    { "inputs": [], "name": "NotTokenOwner", "type": "error" },
+    { "inputs": [], "name": "ReservePriceNotMet", "type": "error" },
+    { "inputs": [], "name": "TokenAlreadyListed", "type": "error" },
+    { "inputs": [], "name": "TokenInAuction", "type": "error" },
+    { "inputs": [], "name": "TransferFailed", "type": "error" },
+    { "inputs": [], "name": "ZeroAddress", "type": "error" },
+    { "inputs": [], "name": "EnforcedPause", "type": "error" },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" }
+      ],
+      "name": "AuctionCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "startingPrice", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "reservePrice", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "endTime", "type": "uint256" }
+      ],
+      "name": "AuctionCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "newEndTime", "type": "uint256" }
+      ],
+      "name": "AuctionExtended",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "winner", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      ],
+      "name": "AuctionFinalized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "bidder", "type": "address" },
+        { "indexed": false, "internalType": "bytes32", "name": "commitHash", "type": "bytes32" }
+      ],
+      "name": "BidCommitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "bidder", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      ],
+      "name": "BidPlaced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" }
+      ],
+      "name": "ListingCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "oldPrice", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "newPrice", "type": "uint256" }
+      ],
+      "name": "ListingPriceUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }
+      ],
+      "name": "Listed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" },
+        { "indexed": true, "internalType": "address", "name": "buyer", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }
+      ],
+      "name": "Sale",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      ],
+      "name": "Withdrawal",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "pokemonContract",
+      "outputs": [{ "internalType": "contract IERC721", "name": "", "type": "address" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "platformFee",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "internalType": "uint256", "name": "price", "type": "uint256" }
+      ],
+      "name": "listCard",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "cancelListing",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "internalType": "uint256", "name": "newPrice", "type": "uint256" }
+      ],
+      "name": "updateListingPrice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "buyCard",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "internalType": "uint256", "name": "startingPrice", "type": "uint256" },
+        { "internalType": "uint256", "name": "reservePrice", "type": "uint256" },
+        { "internalType": "uint256", "name": "duration", "type": "uint256" }
+      ],
+      "name": "createAuction",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "internalType": "bytes32", "name": "commitHash", "type": "bytes32" }
+      ],
+      "name": "commitBid",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+        { "internalType": "bytes32", "name": "secret", "type": "bytes32" }
+      ],
+      "name": "revealBid",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "placeBid",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "finalizeAuction",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "cancelAuction",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+      "name": "getPendingWithdrawal",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "getListing",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "address", "name": "seller", "type": "address" },
+            { "internalType": "uint256", "name": "price", "type": "uint256" },
+            { "internalType": "bool", "name": "isActive", "type": "bool" }
+          ],
+          "internalType": "struct PokemonTrading.Listing",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "getAuction",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "address", "name": "seller", "type": "address" },
+            { "internalType": "uint256", "name": "startingPrice", "type": "uint256" },
+            { "internalType": "uint256", "name": "reservePrice", "type": "uint256" },
+            { "internalType": "uint256", "name": "highestBid", "type": "uint256" },
+            { "internalType": "address", "name": "highestBidder", "type": "address" },
+            { "internalType": "uint256", "name": "startTime", "type": "uint256" },
+            { "internalType": "uint256", "name": "endTime", "type": "uint256" },
+            { "internalType": "bool", "name": "isActive", "type": "bool" },
+            { "internalType": "bool", "name": "finalized", "type": "bool" }
+          ],
+          "internalType": "struct PokemonTrading.Auction",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "isAuctionActive",
+      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+      "name": "getAuctionTimeRemaining",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "bidder", "type": "address" },
+        { "internalType": "uint256", "name": "amount", "type": "uint256" },
+        { "internalType": "bytes32", "name": "secret", "type": "bytes32" }
+      ],
+      "name": "generateCommitHash",
+      "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}

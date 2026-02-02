@@ -1,16 +1,47 @@
 # Node
+node_modules/
 /node_modules
+frontend/node_modules/
 
-# Hardhat build output
+# Hardhat
 /artifacts
 /cache
 /contracts/artifacts
-
-# Typechain
+artifacts/
+cache/
+typechain-types/
 /typechain-types
 
 # Coverage
 /coverage
+coverage/
+coverage.json
+/coverage.json
 
-# macOS
+# Environment
+.env
+frontend/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Build
+frontend/build/
+
+# Deployment
+deployment.json
+
+# Coursework files
+instructions.txt
+UCL__DeFi_Coursework_1 (1).pdf
