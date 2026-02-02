@@ -58,6 +58,9 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     mapping(uint256 => mapping(address => BidCommitment)) public bidCommitments;
     mapping(uint256 => mapping(address => uint256)) public auctionBids;
 
+    // ============ Fee Tracking ============
+    uint256 public accumulatedFees;
+
     // ============ Events ============
     event Listed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event ListingCancelled(uint256 indexed tokenId, address indexed seller);
@@ -108,6 +111,8 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     error CannotBidOnOwnAuction();
     error AuctionEnded();
     error ReservePriceNotMet();
+    error AuctionHasBids();
+    error NoFeesToWithdraw();
 
     // ============ Constructor ============
     constructor(address _pokemonContract, uint256 _platformFee) {
@@ -214,6 +219,9 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         uint256 fee = (price * platformFee) / 10000;
         uint256 sellerProceeds = price - fee;
 
+        // Track platform fees separately
+        accumulatedFees += fee;
+
         // Update pending withdrawals (pull pattern)
         pendingWithdrawals[seller] += sellerProceeds;
 
@@ -312,6 +320,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         BidCommitment storage commitment = bidCommitments[tokenId][msg.sender];
 
         if (!auction.isActive) revert AuctionNotActive();
+        if (block.timestamp >= auction.endTime) revert AuctionEnded();
         if (commitment.commitHash == bytes32(0)) revert CommitmentNotFound();
         if (commitment.revealed) revert CommitmentAlreadyRevealed();
 
@@ -395,6 +404,9 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
             uint256 fee = (auction.highestBid * platformFee) / 10000;
             uint256 sellerProceeds = auction.highestBid - fee;
 
+            // Track platform fees separately
+            accumulatedFees += fee;
+
             // Update pending withdrawals
             pendingWithdrawals[auction.seller] += sellerProceeds;
 
@@ -427,7 +439,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         
         if (!auction.isActive) revert AuctionNotActive();
         if (auction.seller != msg.sender) revert NotSeller();
-        if (auction.highestBidder != address(0)) revert BidTooLow(); // Has bids, can't cancel
+        if (auction.highestBidder != address(0)) revert AuctionHasBids();
 
         auction.isActive = false;
         auction.finalized = true;
@@ -481,16 +493,30 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     }
 
     /**
-     * @dev Withdraw platform fees
+     * @dev Withdraw platform fees (only accumulated fees, not user funds)
      */
     function withdrawFees() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
-        uint256 balance = address(this).balance;
-        if (balance == 0) revert NoPendingWithdrawal();
+        uint256 fees = accumulatedFees;
+        if (fees == 0) revert NoFeesToWithdraw();
 
-        (bool success, ) = payable(msg.sender).call{value: balance}("");
-        if (!success) revert TransferFailed();
+        // Zero out before transfer to prevent reentrancy
+        accumulatedFees = 0;
 
-        emit Withdrawal(msg.sender, balance);
+        (bool success, ) = payable(msg.sender).call{value: fees}("");
+        if (!success) {
+            // Restore fees if transfer fails
+            accumulatedFees = fees;
+            revert TransferFailed();
+        }
+
+        emit Withdrawal(msg.sender, fees);
+    }
+
+    /**
+     * @dev Get accumulated platform fees
+     */
+    function getAccumulatedFees() external view returns (uint256) {
+        return accumulatedFees;
     }
 
     /**

@@ -170,6 +170,15 @@ async function main() {
   );
   console.log();
   console.log("💾 Deployment info saved to deployment.json");
+
+  // Auto-update frontend .env file
+  const envPath = path.join(__dirname, "../frontend/.env");
+  const envContent = `REACT_APP_POKEMON_CARD_ADDRESS=${pokemonCardAddress}
+REACT_APP_TRADING_ADDRESS=${tradingAddress}
+`;
+
+  fs.writeFileSync(envPath, envContent);
+  console.log("✅ Frontend .env automatically updated!");
 }
 
 main()

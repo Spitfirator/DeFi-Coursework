@@ -48,36 +48,62 @@ A decentralized application (dApp) for trading Pokemon cards as NFTs on the Ethe
 
 1. **Install dependencies**
 ```bash
-cd DeFi-Coursework
 npm install
+cd frontend && npm install && cd ..
 ```
 
-2. **Start local blockchain**
+2. **Start local blockchain** (Terminal 1)
 ```bash
 npm run node
 ```
 
-3. **Deploy contracts** (in a new terminal)
+3. **Deploy contracts** (Terminal 2)
 ```bash
 npm run deploy:local
 ```
+This deploys contracts and automatically updates `frontend/.env` with addresses.
 
-4. **Configure frontend**
+4. **Start frontend** (Terminal 3)
 ```bash
 cd frontend
-cp .env.example .env
-# Update .env with deployed contract addresses from step 3
-npm install
-```
-
-5. **Start frontend**
-```bash
 npm start
 ```
+Opens at http://localhost:3000
 
-6. **Configure MetaMask**
+5. **Configure MetaMask**
    - Add Hardhat network: RPC URL `http://127.0.0.1:8545`, Chain ID `31337`
-   - Import a test account using private key from Hardhat node output
+   - Import test accounts using private keys from Hardhat node output
+
+### Test Account Private Keys (Hardhat Default)
+```
+Account 0: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+Account 1: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+Account 2: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+```
+
+### Testing the App
+
+1. **View your cards**: Go to "My Cards" - each test account has 10 Pokemon cards
+2. **List a card for sale**: Hover over a card → Click "List" → Set price → Confirm in MetaMask
+3. **Buy a card**: Switch MetaMask to a different account → Go to "Marketplace" → Click a card → "Buy Now"
+4. **Create an auction**: "My Cards" → Hover card → "Auction" → Set starting/reserve price and duration
+5. **Place a bid**: Switch account → "Marketplace" → "Auctions" tab → Select auction → Place bid
+6. **Finalize auction**: After auction ends, click "Finalize Auction" to transfer NFT to winner
+7. **Withdraw funds**: After selling, click "Withdraw" button to collect your ETH
+
+### Stopping the App
+```bash
+# Kill frontend (port 3000)
+lsof -ti:3000 | xargs kill -9
+
+# Kill Hardhat node (port 8545)
+lsof -ti:8545 | xargs kill -9
+```
+
+### Troubleshooting
+- **"Failed to load cards"**: Redeploy contracts with `npm run deploy:local`
+- **Transaction stuck/failing**: In MetaMask → Settings → Advanced → Clear activity tab data
+- **After restarting Hardhat node**: Must redeploy contracts AND clear MetaMask activity
 
 ## 🏗️ Architecture
 

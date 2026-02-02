@@ -374,7 +374,7 @@ describe("PokemonTrading", function () {
 
       await expect(
         trading.connect(seller).cancelAuction(0)
-      ).to.be.revertedWithCustomError(trading, "BidTooLow");
+      ).to.be.revertedWithCustomError(trading, "AuctionHasBids");
     });
   });
 
@@ -521,6 +521,68 @@ describe("PokemonTrading", function () {
         trading.connect(owner).setPlatformFee(1001)
       ).to.be.revertedWithCustomError(trading, "FeeTooHigh");
     });
+
+    it("Should track accumulated fees from sales", async function () {
+      const { trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).listCard(0, LISTING_PRICE);
+      await trading.connect(buyer).buyCard(0, { value: LISTING_PRICE });
+
+      const expectedFee = LISTING_PRICE * BigInt(PLATFORM_FEE) / BigInt(10000);
+      expect(await trading.getAccumulatedFees()).to.equal(expectedFee);
+    });
+
+    it("Should track accumulated fees from auctions", async function () {
+      const { trading, seller, bidder1 } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createAuction(
+        0,
+        AUCTION_STARTING_PRICE,
+        AUCTION_RESERVE_PRICE,
+        AUCTION_DURATION
+      );
+
+      await trading.connect(bidder1).placeBid(0, { value: AUCTION_RESERVE_PRICE });
+      await time.increase(AUCTION_DURATION + 1);
+      await trading.finalizeAuction(0);
+
+      const expectedFee = AUCTION_RESERVE_PRICE * BigInt(PLATFORM_FEE) / BigInt(10000);
+      expect(await trading.getAccumulatedFees()).to.equal(expectedFee);
+    });
+
+    it("Should only withdraw accumulated fees, not user funds", async function () {
+      const { trading, owner, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).listCard(0, LISTING_PRICE);
+      await trading.connect(buyer).buyCard(0, { value: LISTING_PRICE });
+
+      const expectedFee = LISTING_PRICE * BigInt(PLATFORM_FEE) / BigInt(10000);
+      const sellerPending = await trading.getPendingWithdrawal(seller.address);
+
+      // Withdraw fees
+      const balanceBefore = await ethers.provider.getBalance(owner.address);
+      const tx = await trading.connect(owner).withdrawFees();
+      const receipt = await tx.wait();
+      const gasUsed = receipt.gasUsed * receipt.gasPrice;
+      const balanceAfter = await ethers.provider.getBalance(owner.address);
+
+      // Admin should only receive the fee, not the seller's funds
+      expect(balanceAfter - balanceBefore + gasUsed).to.equal(expectedFee);
+
+      // Seller should still be able to withdraw their funds
+      expect(await trading.getPendingWithdrawal(seller.address)).to.equal(sellerPending);
+
+      // Accumulated fees should be zero after withdrawal
+      expect(await trading.getAccumulatedFees()).to.equal(0);
+    });
+
+    it("Should revert fee withdrawal when no fees", async function () {
+      const { trading, owner } = await loadFixture(mintAndApproveFixture);
+
+      await expect(
+        trading.connect(owner).withdrawFees()
+      ).to.be.revertedWithCustomError(trading, "NoFeesToWithdraw");
+    });
   });
 
   describe("View Functions", function () {
@@ -554,6 +616,138 @@ describe("PokemonTrading", function () {
       const remaining = await trading.getAuctionTimeRemaining(0);
       expect(remaining).to.be.lte(AUCTION_DURATION);
       expect(remaining).to.be.gt(0);
+    });
+  });
+
+  describe("Full Sale Flow Integration", function () {
+    it("Should correctly transfer ownership through full sale flow", async function () {
+      const { pokemonCard, trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+      const tradingAddress = await trading.getAddress();
+
+      // Initial state: seller owns the card
+      expect(await pokemonCard.ownerOf(0)).to.equal(seller.address);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(1);
+      expect(await pokemonCard.balanceOf(buyer.address)).to.equal(0);
+
+      // Step 1: List the card - NFT moves to trading contract
+      await trading.connect(seller).listCard(0, LISTING_PRICE);
+
+      // Verify: trading contract now owns the NFT
+      expect(await pokemonCard.ownerOf(0)).to.equal(tradingAddress);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(0);
+      expect(await pokemonCard.balanceOf(tradingAddress)).to.equal(1);
+
+      // Step 2: Buy the card - NFT moves to buyer
+      await trading.connect(buyer).buyCard(0, { value: LISTING_PRICE });
+
+      // Verify: buyer now owns the NFT
+      expect(await pokemonCard.ownerOf(0)).to.equal(buyer.address);
+      expect(await pokemonCard.balanceOf(buyer.address)).to.equal(1);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(0);
+      expect(await pokemonCard.balanceOf(tradingAddress)).to.equal(0);
+
+      // Verify: listing is no longer active
+      const listing = await trading.getListing(0);
+      expect(listing.isActive).to.be.false;
+
+      // Verify: seller cannot list the same card again (they don't own it)
+      await expect(
+        trading.connect(seller).listCard(0, LISTING_PRICE)
+      ).to.be.revertedWithCustomError(trading, "NotTokenOwner");
+    });
+
+    it("Should correctly transfer ownership through full auction flow", async function () {
+      const { pokemonCard, trading, seller, bidder1 } = await loadFixture(mintAndApproveFixture);
+      const tradingAddress = await trading.getAddress();
+
+      // Initial state: seller owns the card
+      expect(await pokemonCard.ownerOf(0)).to.equal(seller.address);
+
+      // Step 1: Create auction - NFT moves to trading contract
+      await trading.connect(seller).createAuction(
+        0,
+        AUCTION_STARTING_PRICE,
+        AUCTION_RESERVE_PRICE,
+        AUCTION_DURATION
+      );
+
+      // Verify: trading contract now owns the NFT
+      expect(await pokemonCard.ownerOf(0)).to.equal(tradingAddress);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(0);
+
+      // Step 2: Place bid meeting reserve
+      await trading.connect(bidder1).placeBid(0, { value: AUCTION_RESERVE_PRICE });
+
+      // Step 3: Fast forward and finalize
+      await time.increase(AUCTION_DURATION + 1);
+      await trading.finalizeAuction(0);
+
+      // Verify: bidder1 (winner) now owns the NFT
+      expect(await pokemonCard.ownerOf(0)).to.equal(bidder1.address);
+      expect(await pokemonCard.balanceOf(bidder1.address)).to.equal(1);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(0);
+      expect(await pokemonCard.balanceOf(tradingAddress)).to.equal(0);
+
+      // Verify: auction is finalized
+      const auction = await trading.getAuction(0);
+      expect(auction.isActive).to.be.false;
+      expect(auction.finalized).to.be.true;
+
+      // Verify: seller cannot auction the same card again
+      await expect(
+        trading.connect(seller).createAuction(0, AUCTION_STARTING_PRICE, AUCTION_RESERVE_PRICE, AUCTION_DURATION)
+      ).to.be.revertedWithCustomError(trading, "NotTokenOwner");
+    });
+
+    it("Should return NFT to seller when reserve not met", async function () {
+      const { pokemonCard, trading, seller, bidder1 } = await loadFixture(mintAndApproveFixture);
+
+      // Create auction
+      await trading.connect(seller).createAuction(
+        0,
+        AUCTION_STARTING_PRICE,
+        AUCTION_RESERVE_PRICE,
+        AUCTION_DURATION
+      );
+
+      // Bid below reserve
+      await trading.connect(bidder1).placeBid(0, { value: AUCTION_STARTING_PRICE });
+
+      // Fast forward and finalize
+      await time.increase(AUCTION_DURATION + 1);
+      await trading.finalizeAuction(0);
+
+      // Verify: seller gets NFT back
+      expect(await pokemonCard.ownerOf(0)).to.equal(seller.address);
+      expect(await pokemonCard.balanceOf(seller.address)).to.equal(1);
+
+      // Verify: bidder gets their bid back in pending withdrawals
+      expect(await trading.getPendingWithdrawal(bidder1.address)).to.equal(AUCTION_STARTING_PRICE);
+    });
+
+    it("Should allow new owner to list after purchase", async function () {
+      const { pokemonCard, trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      // Seller lists and buyer buys
+      await trading.connect(seller).listCard(0, LISTING_PRICE);
+      await trading.connect(buyer).buyCard(0, { value: LISTING_PRICE });
+
+      // Verify buyer owns the card
+      expect(await pokemonCard.ownerOf(0)).to.equal(buyer.address);
+
+      // Buyer approves trading contract
+      await pokemonCard.connect(buyer).setApprovalForAll(await trading.getAddress(), true);
+
+      // Buyer can now list the card
+      const newPrice = ethers.parseEther("2");
+      await expect(trading.connect(buyer).listCard(0, newPrice))
+        .to.emit(trading, "Listed")
+        .withArgs(0, buyer.address, newPrice);
+
+      // Verify listing
+      const listing = await trading.getListing(0);
+      expect(listing.seller).to.equal(buyer.address);
+      expect(listing.isActive).to.be.true;
     });
   });
 });
