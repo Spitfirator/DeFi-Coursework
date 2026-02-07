@@ -1,129 +1,222 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
-import { Store, Wallet, Shield, Zap } from 'lucide-react';
+import { ethers } from 'ethers';
+import PokemonCard from '../components/PokemonCard';
+import { Loader } from 'lucide-react';
 
 function Home() {
-  const { account, connectWallet, isConnecting } = useWeb3();
+  const { pokemonContract, tradingContract, provider } = useWeb3();
+  const [floorPrice, setFloorPrice] = useState('---');
+  const [totalItems, setTotalItems] = useState('---');
+  const [volume, setVolume] = useState('---');
+  const [listedCount, setListedCount] = useState('---');
+  const [trendingItems, setTrendingItems] = useState([]);
+  const [loadingTrending, setLoadingTrending] = useState(true);
 
-  const features = [
-    {
-      icon: Store,
-      title: 'Trade Cards',
-      description: 'Buy and sell Pokemon cards with fixed prices or through exciting auctions'
-    },
-    {
-      icon: Shield,
-      title: 'Secure Trading',
-      description: 'Smart contract escrow ensures safe and trustless transactions'
-    },
-    {
-      icon: Zap,
-      title: 'Instant Settlement',
-      description: 'Blockchain-powered instant ownership transfer on purchase'
+  const loadStats = useCallback(async () => {
+    if (!pokemonContract || !tradingContract || !provider) return;
+
+    try {
+      // Total items
+      const totalMinted = await pokemonContract.totalMinted();
+      const total = Number(totalMinted);
+      setTotalItems(total.toString());
+
+      // Iterate tokens for listings/auctions + floor price
+      let minPrice = null;
+      let activeCount = 0;
+      const listingsData = [];
+      const auctionsData = [];
+
+      for (let i = 0; i < total; i++) {
+        try {
+          const stats = await pokemonContract.getPokemonStats(i);
+          const listing = await tradingContract.getListing(i);
+          const auction = await tradingContract.getAuction(i);
+
+          const pokemonData = {
+            tokenId: i,
+            name: stats.name,
+            pokemonType: stats.pokemonType,
+            rarity: stats.rarity,
+            hp: Number(stats.hp),
+            attack: Number(stats.attack),
+            defense: Number(stats.defense),
+            speed: Number(stats.speed),
+            generation: Number(stats.generation)
+          };
+
+          if (listing.isActive) {
+            activeCount++;
+            const priceWei = listing.price;
+            if (minPrice === null || priceWei < minPrice) {
+              minPrice = priceWei;
+            }
+            listingsData.push({
+              ...pokemonData,
+              listing: {
+                seller: listing.seller,
+                price: ethers.formatEther(listing.price),
+                isActive: listing.isActive
+              }
+            });
+          }
+
+          if (auction.isActive) {
+            activeCount++;
+            const startPriceWei = auction.startingPrice;
+            if (minPrice === null || startPriceWei < minPrice) {
+              minPrice = startPriceWei;
+            }
+            const timeRemaining = await tradingContract.getAuctionTimeRemaining(i);
+            auctionsData.push({
+              ...pokemonData,
+              auction: {
+                seller: auction.seller,
+                startingPrice: ethers.formatEther(auction.startingPrice),
+                reservePrice: ethers.formatEther(auction.reservePrice),
+                highestBid: ethers.formatEther(auction.highestBid),
+                highestBidder: auction.highestBidder,
+                endTime: Number(auction.endTime),
+                timeRemaining: Number(timeRemaining),
+                isActive: auction.isActive
+              }
+            });
+          }
+        } catch (err) {
+          // skip token errors
+        }
+      }
+
+      setListedCount(activeCount.toString());
+      setFloorPrice(minPrice ? `${ethers.formatEther(minPrice)} ETH` : '---');
+
+      // Trending: combine listings + auctions, take up to 8
+      const combined = [...listingsData, ...auctionsData].slice(0, 8);
+      setTrendingItems(combined);
+
+      // Volume from Sale and AuctionFinalized events
+      try {
+        const saleFilter = tradingContract.filters.Sale();
+        const auctionFinalizedFilter = tradingContract.filters.AuctionFinalized();
+        const [saleEvents, auctionEvents] = await Promise.all([
+          tradingContract.queryFilter(saleFilter),
+          tradingContract.queryFilter(auctionFinalizedFilter)
+        ]);
+
+        let totalVolume = BigInt(0); // eslint-disable-line no-undef
+        for (const event of saleEvents) {
+          totalVolume += event.args.price;
+        }
+        for (const event of auctionEvents) {
+          totalVolume += event.args.amount;
+        }
+        setVolume(`${ethers.formatEther(totalVolume)} ETH`);
+      } catch (err) {
+        setVolume('0 ETH');
+      }
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    } finally {
+      setLoadingTrending(false);
     }
+  }, [pokemonContract, tradingContract, provider]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const stats = [
+    { label: 'Floor Price', value: floorPrice },
+    { label: 'Total Items', value: totalItems },
+    { label: 'Volume', value: volume },
+    { label: 'Listed', value: listedCount }
   ];
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div>
       {/* Hero Section */}
-      <div className="text-center py-16">
-        <h1 className="text-5xl md:text-6xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-primary via-secondary to-pink-500 bg-clip-text text-transparent">
-            Pokemon Card Trading
-          </span>
-        </h1>
-        <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-          Collect, trade, and auction rare Pokemon cards as NFTs on the blockchain. 
-          Your favorite cards, truly owned by you.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          {account ? (
-            <>
-              <Link
-                to="/marketplace"
-                className="px-8 py-3 bg-gradient-to-r from-primary to-secondary rounded-lg font-semibold hover:opacity-90 transition-opacity"
+      <div className="relative w-full h-[500px] overflow-hidden rounded-2xl mb-12">
+        {/* Background image with ken burns */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(/hero-banner.png)',
+            animation: 'kenburns 20s ease-in-out infinite'
+          }}
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+
+        {/* Hero content */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+          <h1 className="text-5xl md:text-7xl font-black mb-4 leading-tight">
+            <span className="text-yellow-400" style={{ WebkitTextStroke: '2px #ca8a04' }}>Collect.</span>{' '}
+            <span className="text-blue-400" style={{ WebkitTextStroke: '2px #2563eb' }}>Trade.</span>{' '}
+            <span className="text-red-500" style={{ WebkitTextStroke: '2px #dc2626' }}>Own.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-300 mb-8">
+            100 Unique Pokemon NFTs
+          </p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 w-full max-w-2xl">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-black/50 backdrop-blur-md rounded-xl p-4 border border-white/10"
               >
-                Explore Marketplace
-              </Link>
-              <Link
-                to="/my-cards"
-                className="px-8 py-3 bg-gray-800 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
-              >
-                View My Cards
-              </Link>
-            </>
-          ) : (
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-primary to-secondary rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              <Wallet size={20} />
-              <span>{isConnecting ? 'Connecting...' : 'Connect Wallet to Start'}</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="grid md:grid-cols-3 gap-6 py-12">
-        {features.map((feature, index) => (
-          <div
-            key={index}
-            className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-primary/50 transition-colors"
-          >
-            <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
-              <feature.icon className="text-primary" size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-            <p className="text-gray-400">{feature.description}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Stats Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 mt-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div>
-            <div className="text-3xl font-bold text-primary">10,000</div>
-            <div className="text-gray-400">Max Supply</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-secondary">151+</div>
-            <div className="text-gray-400">Pokemon</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-pink-500">2.5%</div>
-            <div className="text-gray-400">Platform Fee</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-green-500">0.01</div>
-            <div className="text-gray-400">ETH Mint Price</div>
-          </div>
-        </div>
-      </div>
-
-      {/* How It Works */}
-      <div className="py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-        <div className="grid md:grid-cols-4 gap-6">
-          {[
-            { step: 1, title: 'Connect Wallet', desc: 'Link your MetaMask wallet' },
-            { step: 2, title: 'Get Cards', desc: 'Mint or buy from marketplace' },
-            { step: 3, title: 'Trade', desc: 'List for sale or create auctions' },
-            { step: 4, title: 'Collect', desc: 'Build your ultimate collection' }
-          ].map((item) => (
-            <div key={item.step} className="text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                {item.step}
+                <div className="text-xl font-bold text-white">{stat.value}</div>
+                <div className="text-sm text-gray-400">{stat.label}</div>
               </div>
-              <h3 className="font-semibold mb-2">{item.title}</h3>
-              <p className="text-gray-400 text-sm">{item.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* CTA */}
+          <Link
+            to="/marketplace"
+            className="px-8 py-3 bg-gradient-to-r from-primary to-secondary rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+          >
+            Explore Collection
+          </Link>
         </div>
+      </div>
+
+      {/* Trending Now Section */}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Trending Now</h2>
+          <Link
+            to="/marketplace"
+            className="text-primary hover:text-secondary transition-colors font-semibold"
+          >
+            View All &rarr;
+          </Link>
+        </div>
+
+        {loadingTrending ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader className="animate-spin text-primary" size={48} />
+          </div>
+        ) : trendingItems.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {trendingItems.map((item) => (
+              <PokemonCard
+                key={`${item.tokenId}-${item.listing ? 'l' : 'a'}`}
+                pokemon={item}
+                listing={item.listing}
+                auction={item.auction}
+                showActions={true}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-lg">No active listings yet</p>
+            <p className="text-sm mt-2">Connect your wallet and list some Pokemon!</p>
+          </div>
+        )}
       </div>
     </div>
   );
