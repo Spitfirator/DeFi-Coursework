@@ -16,6 +16,8 @@ import { useMarketplaceActions } from '@/hooks/useMarketplaceActions';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { POKEMON_NFT_ADDRESS } from '@/contracts/addresses';
 import { CreateListingModal } from '@/components/modals/CreateListingModal';
+import { useCart } from '@/context/CartContext';
+import { ShoppingCart, Check } from 'lucide-react';
 
 export default function NFTDetailPage() {
     const params = useParams();
@@ -23,6 +25,7 @@ export default function NFTDetailPage() {
     const tokenId = params.id as string;
     const { data: items, isLoading } = useMarketplaceData();
     const { account, nftContract } = useWeb3();
+    const { addToCart, removeFromCart, isInCart } = useCart();
 
     const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
     const [isBidModalOpen, setIsBidModalOpen] = useState(false);
@@ -74,11 +77,8 @@ export default function NFTDetailPage() {
         if (nft.saleType === 'fixed') {
             success = await cancelListing(address, tokenIDBigInt);
         } else if (nft.saleType === 'auction') {
-            // Logic for auctions
             if (nft.auction && nft.auction.highestBid > 0n) {
-                // If auction has bids, Check if ended
                 const isEnded = nft.auction.endTime <= BigInt(Math.floor(Date.now() / 1000));
-
                 if (isEnded) {
                     success = await endAuction(address, tokenIDBigInt);
                 } else {
@@ -94,7 +94,6 @@ export default function NFTDetailPage() {
 
         if (success) {
             queryClient.invalidateQueries({ queryKey: ['marketplace'] });
-            // Optionally redirect or show success toast
             alert('Transaction Successful');
             router.refresh();
         }
@@ -145,7 +144,7 @@ export default function NFTDetailPage() {
         }
     };
 
-    // Calculate floor price from all fixed listings
+    // Calculate floor price
     const floorPrice = items
         ?.filter(i => i.saleType === 'fixed')
         .reduce((min, item) => {
@@ -295,6 +294,26 @@ export default function NFTDetailPage() {
                                     {!isOwner && (
                                         <>
                                             {nft.saleType === 'fixed' && (
+                                                <div className="flex gap-2 flex-1">
+                                                    <Button
+                                                        className="flex-1"
+                                                        size="lg"
+                                                        onClick={() => setIsBuyModalOpen(true)}
+                                                    >
+                                                        Buy Now
+                                                    </Button>
+                                                    <Button
+                                                        variant={isInCart(tokenId) ? "secondary" : "outline"}
+                                                        size="icon"
+                                                        className="h-12 w-12"
+                                                        onClick={() => isInCart(tokenId) ? removeFromCart(tokenId) : addToCart(nft)}
+                                                        title={isInCart(tokenId) ? "Remove from Cart" : "Add to Cart"}
+                                                    >
+                                                        {isInCart(tokenId) ? <Check className="h-6 w-6 text-green-500" /> : <ShoppingCart className="h-6 w-6" />}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {nft.saleType === 'dutch' && (
                                                 <Button
                                                     className="flex-1"
                                                     size="lg"
@@ -312,13 +331,6 @@ export default function NFTDetailPage() {
                                                     Place Bid
                                                 </Button>
                                             )}
-                                            <Button
-                                                variant="outline"
-                                                size="lg"
-                                                onClick={() => alert('Offer system coming soon!')}
-                                            >
-                                                Make Offer
-                                            </Button>
                                         </>
                                     )}
                                     {isOwner && (nft.saleType === 'fixed' || nft.saleType === 'auction' || nft.saleType === 'dutch') && (
@@ -420,7 +432,6 @@ export default function NFTDetailPage() {
                 isOpen={isBidModalOpen}
                 onClose={() => {
                     setIsBidModalOpen(false);
-                    // Auto-refresh data after closing modal
                     queryClient.invalidateQueries({ queryKey: ['marketplace'] });
                 }}
             />
@@ -428,9 +439,9 @@ export default function NFTDetailPage() {
             <BuyModal
                 item={nft}
                 isOpen={isBuyModalOpen}
+                currentPrice={currentPrice}
                 onClose={() => {
                     setIsBuyModalOpen(false);
-                    // Auto-refresh data after closing modal
                     queryClient.invalidateQueries({ queryKey: ['marketplace'] });
                 }}
             />

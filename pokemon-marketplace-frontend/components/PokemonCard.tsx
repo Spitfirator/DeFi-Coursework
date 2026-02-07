@@ -15,21 +15,15 @@ interface PokemonCardProps {
 
 export function PokemonCard({ pokemon, imageUri, children }: PokemonCardProps) {
     const getRarityLabel = (rarity: number) => {
-        switch (rarity) {
-            case 5: return 'Legendary';
-            case 2: return 'Rare';
-            case 0: return 'Common';
-            default: return 'Common';
-        }
+        if (rarity === 5) return 'Legendary';
+        if (rarity === 4) return 'Rare';
+        return 'Common';
     };
 
     const getRarityVariant = (rarity: number) => {
-        switch (rarity) {
-            case 5: return 'legendary';
-            case 2: return 'rare';
-            case 0: return 'common';
-            default: return 'common';
-        }
+        if (rarity === 5) return 'legendary';
+        if (rarity === 4) return 'rare';
+        return 'common';
     };
 
     // Note: imageUri now contains the direct PokeAPI URL from metadata

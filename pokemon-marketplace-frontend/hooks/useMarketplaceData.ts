@@ -6,8 +6,10 @@ export function useMarketplaceData() {
     const { nftContract, marketplaceContract } = useWeb3();
 
     return useQuery<MarketplaceItem[]>({
-        queryKey: ['marketplace', nftContract?.target, marketplaceContract?.target],
+        queryKey: ['marketplace', nftContract?.target, marketplaceContract?.target, 'v2'], // Added v2 to force refetch
         enabled: !!nftContract && !!marketplaceContract,
+        staleTime: 0, // Always refetch
+        gcTime: 0, // Don't cache (renamed from cacheTime in React Query v5)
         queryFn: async () => {
             if (!nftContract || !marketplaceContract) {
                 throw new Error('Contracts not initialized');
@@ -35,18 +37,38 @@ export function useMarketplaceData() {
                         batch.map(async (id) => {
                             const tokenId = BigInt(id);
 
-                            // Fetch all contract data in parallel (NO HTTP requests for metadata)
-                            const [pokemonRaw, listing, auction, dutchAuction, owner] = await Promise.all([
+                            // Fetch all contract data in parallel
+                            const [pokemonRaw, listing, auction, dutchAuction, owner, tokenURI] = await Promise.all([
                                 nftContract.pokemonData(tokenId),
                                 marketplaceContract.listings(nftContract.target, tokenId),
                                 marketplaceContract.auctions(nftContract.target, tokenId),
                                 marketplaceContract.dutchAuctions(nftContract.target, tokenId),
-                                nftContract.ownerOf(tokenId).catch(() => '0x0')
+                                nftContract.ownerOf(tokenId).catch(() => '0x0'),
+                                nftContract.tokenURI(tokenId)
                             ]);
 
-                            // Use direct PokeAPI image URL (no HTTP fetch needed!)
-                            // Token ID maps to Pokedex number (offset by 1 for most)
-                            const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id + 1}.png`;
+                            // Fetch metadata to get correct Pokedex number
+                            let pokedexNumber = id + 1; // Fallback to tokenId + 1
+                            try {
+                                console.log(`Fetching metadata for token ${id} from:`, tokenURI);
+                                const metadataResponse = await fetch(tokenURI);
+                                if (!metadataResponse.ok) {
+                                    throw new Error(`HTTP ${metadataResponse.status}`);
+                                }
+                                const metadata = await metadataResponse.json();
+                                console.log(`Token ${id} metadata:`, metadata);
+                                const pokedexAttr = metadata.attributes?.find((attr: any) => attr.trait_type === 'Pokedex Number');
+                                if (pokedexAttr) {
+                                    pokedexNumber = pokedexAttr.value;
+                                    console.log(`Token ${id}: Using Pokedex #${pokedexNumber} (${metadata.name})`);
+                                }
+                            } catch (error) {
+                                console.warn(`Failed to fetch metadata for token ${id}:`, error);
+                                console.log(`Token ${id}: Using fallback Pokedex #${pokedexNumber}`);
+                            }
+
+                            // Use correct PokeAPI image URL based on Pokedex number from metadata
+                            const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokedexNumber}.png`;
 
                             // Determine sale type
                             const isFixedListed = listing.price > 0n;
@@ -112,7 +134,6 @@ export function useMarketplaceData() {
                 throw error;
             }
         },
-        staleTime: 1000 * 60, // 1 minute cache
         refetchOnWindowFocus: true, // Auto-refresh when user returns to tab
     });
 }

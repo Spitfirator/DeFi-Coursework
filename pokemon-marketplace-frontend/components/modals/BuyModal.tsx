@@ -14,10 +14,11 @@ interface BuyModalProps {
     item: MarketplaceItem | null;
     isOpen: boolean;
     onClose: () => void;
+    currentPrice?: bigint; // For Dutch Auctions
 }
 
-export function BuyModal({ item, isOpen, onClose }: BuyModalProps) {
-    const { buyFixedPrice, isPending, error, clearError } = useMarketplaceActions();
+export function BuyModal({ item, isOpen, onClose, currentPrice }: BuyModalProps) {
+    const { buyFixedPrice, buyDutchAuction, isPending, error, clearError } = useMarketplaceActions();
     const { nftContract, marketplaceContract } = useWeb3();
     const queryClient = useQueryClient();
     const [estimatedGas, setEstimatedGas] = useState<string>('');
@@ -43,11 +44,20 @@ export function BuyModal({ item, isOpen, onClose }: BuyModalProps) {
                 const price = item.listing.price;
 
                 // Estimate gas for the transaction
-                const gasEstimate = await marketplaceContract.buyFixedPrice.estimateGas(
-                    nftAddress,
-                    tokenId,
-                    { value: price }
-                );
+                let gasEstimate = 0n;
+                if (item.saleType === 'dutch') {
+                    gasEstimate = await marketplaceContract.buyDutchAuction.estimateGas(
+                        nftAddress,
+                        tokenId,
+                        { value: (currentPrice || item.dutchAuction?.startPrice) }
+                    );
+                } else {
+                    gasEstimate = await marketplaceContract.buyFixedPrice.estimateGas(
+                        nftAddress,
+                        tokenId,
+                        { value: price }
+                    );
+                }
 
                 // Get gas price
                 const provider = marketplaceContract.runner?.provider;
@@ -70,13 +80,21 @@ export function BuyModal({ item, isOpen, onClose }: BuyModalProps) {
         }
     }, [isOpen, marketplaceContract, nftContract, item]);
 
-    if (!item || !item.listing) return null;
+    // For Dutch auctions, we rely on currentPrice or dutchAuction data
+    if (!item || (item.saleType === 'fixed' && !item.listing) || (item.saleType === 'dutch' && !item.dutchAuction)) return null;
 
     const handleBuy = async () => {
         if (!nftContract) return;
 
         const nftAddress = await nftContract.getAddress();
-        const success = await buyFixedPrice(nftAddress, BigInt(item.pokemon.tokenId), item.listing.price);
+        let success = false;
+
+        if (item.saleType === 'dutch') {
+            const priceToPay = currentPrice || item.dutchAuction?.startPrice || 0n;
+            success = await buyDutchAuction(nftAddress, BigInt(item.pokemon.tokenId), priceToPay);
+        } else {
+            success = await buyFixedPrice(nftAddress, BigInt(item.pokemon.tokenId), item.listing?.price || 0n);
+        }
 
         if (success) {
             // Auto-refresh marketplace data
@@ -86,7 +104,9 @@ export function BuyModal({ item, isOpen, onClose }: BuyModalProps) {
         }
     };
 
-    const priceEth = formatEther(item.listing.price);
+    const priceEth = item.saleType === 'dutch' && currentPrice
+        ? formatEther(currentPrice)
+        : (item.listing ? formatEther(item.listing.price) : '0');
     const imageUrl = resolveIPFS(item.imageUri);
 
     return (

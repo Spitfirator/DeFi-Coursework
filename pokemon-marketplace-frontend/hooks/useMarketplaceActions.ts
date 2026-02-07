@@ -231,8 +231,28 @@ export function useMarketplaceActions() {
         setError(null);
     }, []);
 
+    const buyDutchAuction = useCallback(async (nftAddress: string, tokenId: bigint, priceVal: bigint) => {
+        setIsPending(true);
+        setError(null);
+        try {
+            const { marketplaceContract } = checkRequirements();
+            const tx = await marketplaceContract.buyDutchAuction(nftAddress, tokenId, {
+                value: priceVal // Send calculated price
+            });
+            await tx.wait();
+            return true;
+        } catch (err: any) {
+            console.error('Buy Dutch Auction error:', err);
+            setError(getFriendlyErrorMessage(err));
+            return false;
+        } finally {
+            setIsPending(false);
+        }
+    }, [marketplaceContract, nftContract, account]);
+
     return {
         buyFixedPrice,
+        buyDutchAuction,
         placeBid,
         listFixedPrice,
         createAuction,

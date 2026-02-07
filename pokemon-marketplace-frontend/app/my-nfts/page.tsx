@@ -14,6 +14,13 @@ export default function MyNFTsPage() {
         if (!account) return false;
         const user = account.toLowerCase();
 
+        // DEBUG: Log filtering
+        console.log(`Filtering token #${item.pokemon.tokenId}:`, {
+            owner: item.owner,
+            user: user,
+            match: item.owner.toLowerCase() === user
+        });
+
         // 1. Direct Ownership
         if (item.owner.toLowerCase() === user) return true;
 

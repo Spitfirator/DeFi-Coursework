@@ -55,8 +55,9 @@ export default function MarketplacePage() {
             // Rarity filter
             if (filters.rarity.length > 0) {
                 const matchesRarity = filters.rarity.some(r => {
-                    if (r === 0) return item.pokemon.rarity >= 1 && item.pokemon.rarity <= 3; // Common
-                    return item.pokemon.rarity === r;
+                    // Common: rarity 1-3, Rare: 4, Legendary: 5
+                    if (r === 1) return item.pokemon.rarity >= 1 && item.pokemon.rarity <= 3; // Common
+                    return item.pokemon.rarity === r; // Rare (4) or Legendary (5)
                 });
                 if (!matchesRarity) return false;
             }

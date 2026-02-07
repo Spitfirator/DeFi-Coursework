@@ -122,7 +122,7 @@ export function FilterPanel({ onFilterChange, availableTypes }: FilterPanelProps
                         {[
                             { value: 5, label: 'Legendary', color: 'text-yellow-500' },
                             { value: 4, label: 'Rare', color: 'text-purple-500' },
-                            { value: 0, label: 'Common', color: 'text-gray-500' }
+                            { value: 1, label: 'Common', color: 'text-gray-500' } // Changed from 0 to 1
                         ].map(({ value, label, color }) => (
                             <label key={value} className="flex items-center gap-2 cursor-pointer">
                                 <input
