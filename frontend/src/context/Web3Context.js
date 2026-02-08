@@ -124,10 +124,27 @@ export function Web3Provider({ children }) {
 
   useEffect(() => {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
+      window.ethereum.on('accountsChanged', async (accounts) => {
         if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          toast.success('Account changed');
+          // Reinitialize everything when account changes
+          try {
+            const browserProvider = new ethers.BrowserProvider(window.ethereum);
+            const network = await browserProvider.getNetwork();
+            const signerInstance = await browserProvider.getSigner();
+
+            setProvider(browserProvider);
+            setSigner(signerInstance);
+            setAccount(accounts[0]);
+            setChainId(Number(network.chainId));
+            setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
+
+            await initializeContracts(signerInstance);
+
+            toast.success('Account changed');
+          } catch (error) {
+            console.error('Failed to switch account:', error);
+            toast.error('Failed to switch account');
+          }
         } else {
           disconnectWallet();
         }
@@ -136,6 +153,31 @@ export function Web3Provider({ children }) {
       window.ethereum.on('chainChanged', () => {
         window.location.reload();
       });
+
+      // Auto-reconnect if wallet was previously connected
+      const checkConnection = async () => {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            // Wallet is already connected, silently reconnect
+            const browserProvider = new ethers.BrowserProvider(window.ethereum);
+            const network = await browserProvider.getNetwork();
+            const signerInstance = await browserProvider.getSigner();
+
+            setProvider(browserProvider);
+            setSigner(signerInstance);
+            setAccount(accounts[0]);
+            setChainId(Number(network.chainId));
+            setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
+
+            await initializeContracts(signerInstance);
+          }
+        } catch (error) {
+          console.error('Auto-reconnect failed:', error);
+        }
+      };
+
+      checkConnection();
     }
 
     return () => {
@@ -144,7 +186,7 @@ export function Web3Provider({ children }) {
         window.ethereum.removeAllListeners('chainChanged');
       }
     };
-  }, []);
+  }, [initializeContracts]);
 
   const value = {
     account,
