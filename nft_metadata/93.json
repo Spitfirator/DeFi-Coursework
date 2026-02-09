@@ -1,0 +1,32 @@
+{
+  "name": "Squirtle #93",
+  "description": "Tiny Turtle Pokemon that withdraws into its shell. This is a Common Pokemon NFT with power level 35.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/7",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Squirtle"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 1
+    },
+    {
+      "trait_type": "Type",
+      "value": "Water"
+    },
+    {
+      "trait_type": "Level",
+      "value": 35
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 7
+    }
+  ]
+}

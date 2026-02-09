@@ -1,0 +1,32 @@
+{
+  "name": "Mewtwo #0",
+  "description": "A legendary Psychic-type created through genetic manipulation. This is a Legendary Pokemon NFT with power level 80.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/150",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Mewtwo"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 5
+    },
+    {
+      "trait_type": "Type",
+      "value": "Psychic"
+    },
+    {
+      "trait_type": "Level",
+      "value": 80
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 150
+    }
+  ]
+}

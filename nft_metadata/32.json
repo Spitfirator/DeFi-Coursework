@@ -1,0 +1,32 @@
+{
+  "name": "Charmander #32",
+  "description": "Lizard Pokemon whose tail flame indicates its health. This is a Common Pokemon NFT with power level 2.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/4",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Charmander"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 3
+    },
+    {
+      "trait_type": "Type",
+      "value": "Fire"
+    },
+    {
+      "trait_type": "Level",
+      "value": 2
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 4
+    }
+  ]
+}

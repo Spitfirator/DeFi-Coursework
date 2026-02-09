@@ -1,0 +1,32 @@
+{
+  "name": "Alakazam #11",
+  "description": "Psi Pokemon with an IQ of 5000. This is a Rare Pokemon NFT with power level 49.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/65.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/65",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Alakazam"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Psychic"
+    },
+    {
+      "trait_type": "Level",
+      "value": 49
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 65
+    }
+  ]
+}

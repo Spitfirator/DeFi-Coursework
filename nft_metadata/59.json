@@ -1,0 +1,32 @@
+{
+  "name": "Oddish #59",
+  "description": "Weed Pokemon that buries itself during the day. This is a Common Pokemon NFT with power level 16.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/43.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/43",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Oddish"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Common"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 3
+    },
+    {
+      "trait_type": "Type",
+      "value": "Grass/Poison"
+    },
+    {
+      "trait_type": "Level",
+      "value": 16
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 43
+    }
+  ]
+}

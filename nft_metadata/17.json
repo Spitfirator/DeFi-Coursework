@@ -1,0 +1,32 @@
+{
+  "name": "Metagross #17",
+  "description": "Iron Leg Pokemon with four brains. This is a Rare Pokemon NFT with power level 58.",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/376.png",
+  "external_url": "https://pokeapi.co/api/v2/pokemon/376",
+  "attributes": [
+    {
+      "trait_type": "Pokemon",
+      "value": "Metagross"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Rarity Level",
+      "value": 4
+    },
+    {
+      "trait_type": "Type",
+      "value": "Steel/Psychic"
+    },
+    {
+      "trait_type": "Level",
+      "value": 58
+    },
+    {
+      "trait_type": "Pokedex Number",
+      "value": 376
+    }
+  ]
+}
