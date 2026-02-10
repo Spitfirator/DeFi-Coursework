@@ -59,6 +59,24 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         bool revealed;
     }
 
+    // Dutch Auction - price decreases over time
+    struct DutchAuction {
+        address seller;
+        uint256 startingPrice;
+        uint256 reservePrice;
+        uint256 startTime;
+        uint256 duration;
+        bool isActive;
+        bool sold;
+    }
+
+    struct SwapRequest {
+        address requester;
+        uint256 desiredTokenId; // The token they want
+        uint256 offeredTokenId; // The token they offer
+        bool isActive;
+    }
+
     // ============ State Variables ============
     IERC721 public pokemonContract;
     uint256 public platformFee; // Basis points (100 = 1%)
@@ -71,9 +89,11 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     // ============ Mappings ============
     mapping(uint256 => Listing) public listings;
     mapping(uint256 => Auction) public auctions;
+    mapping(uint256 => DutchAuction) public dutchAuctions;
     mapping(address => uint256) public pendingWithdrawals;
     mapping(uint256 => mapping(address => BidCommitment)) public bidCommitments;
     mapping(uint256 => mapping(address => uint256)) public auctionBids;
+    mapping(uint256 => SwapRequest[]) public swapRequests; // desiredTokenId => list of requests
 
     // ============ Fee Tracking ============
     uint256 public accumulatedFees;
@@ -98,6 +118,20 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     event AuctionExtended(uint256 indexed tokenId, uint256 newEndTime);
     event AuctionFinalized(uint256 indexed tokenId, address indexed winner, uint256 amount);
     
+    event DutchAuctionCreated(
+        uint256 indexed tokenId,
+        address indexed seller,
+        uint256 startingPrice,
+        uint256 reservePrice,
+        uint256 duration
+    );
+    event DutchAuctionPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
+    event DutchAuctionCancelled(uint256 indexed tokenId, address indexed seller);
+    
+    event SwapRequestCreated(uint256 indexed desiredTokenId, address indexed requester, uint256 offeredTokenId);
+    event SwapExecuted(uint256 indexed desiredTokenId, uint256 indexed offeredTokenId, address indexed requester, address accepter);
+    event SwapCancelled(uint256 indexed desiredTokenId, address indexed requester);
+
     event Withdrawal(address indexed user, uint256 amount);
     event PlatformFeeUpdated(uint256 oldFee, uint256 newFee);
     event EmergencyStop(address indexed by);
@@ -131,6 +165,9 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     error AuctionHasBids();
     error NoFeesToWithdraw();
     error CannotTradeEgg();
+    error DutchAuctionNotActive();
+    error DutchAuctionExpired();
+    error TokenInDutchAuction();
 
     // ============ Constructor ============
     constructor(address _pokemonContract, uint256 _platformFee) {
@@ -162,6 +199,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (listings[tokenId].isActive) revert TokenAlreadyListed();
         if (auctions[tokenId].isActive) revert TokenInAuction();
         if (IPokemonCardStats(address(pokemonContract)).getPokemonStats(tokenId).isEgg) revert CannotTradeEgg();
+        if (dutchAuctions[tokenId].isActive) revert TokenInDutchAuction();
 
         // Transfer NFT to contract for escrow
         pokemonContract.transferFrom(msg.sender, address(this), tokenId);
@@ -281,6 +319,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (listings[tokenId].isActive) revert TokenAlreadyListed();
         if (auctions[tokenId].isActive) revert TokenInAuction();
         if (IPokemonCardStats(address(pokemonContract)).getPokemonStats(tokenId).isEgg) revert CannotTradeEgg();
+        if (dutchAuctions[tokenId].isActive) revert TokenInDutchAuction();
 
         // Transfer NFT to contract for escrow
         pokemonContract.transferFrom(msg.sender, address(this), tokenId);
@@ -599,6 +638,228 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         bytes32 secret
     ) external pure returns (bytes32) {
         return keccak256(abi.encodePacked(bidder, amount, secret));
+    }
+
+    // ============ Dutch Auction Functions ============
+
+    /**
+     * @dev Create a Dutch auction where price decreases over time
+     * @param tokenId Token ID to auction
+     * @param startingPrice Initial high price
+     * @param reservePrice Minimum acceptable price
+     * @param duration Auction duration in seconds
+     */
+    function createDutchAuction(
+        uint256 tokenId,
+        uint256 startingPrice,
+        uint256 reservePrice,
+        uint256 duration
+    ) external whenNotPaused nonReentrant {
+        if (startingPrice == 0) revert InvalidPrice();
+        if (reservePrice >= startingPrice) revert InvalidPrice(); // Reserve must be LESS than starting
+        if (duration < MIN_AUCTION_DURATION || duration > MAX_AUCTION_DURATION) {
+            revert InvalidDuration();
+        }
+        if (pokemonContract.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
+        if (listings[tokenId].isActive) revert TokenAlreadyListed();
+        if (auctions[tokenId].isActive) revert TokenInAuction();
+        if (dutchAuctions[tokenId].isActive) revert TokenInDutchAuction();
+
+        // Transfer NFT to contract for escrow
+        pokemonContract.transferFrom(msg.sender, address(this), tokenId);
+
+        dutchAuctions[tokenId] = DutchAuction({
+            seller: msg.sender,
+            startingPrice: startingPrice,
+            reservePrice: reservePrice,
+            startTime: block.timestamp,
+            duration: duration,
+            isActive: true,
+            sold: false
+        });
+
+        emit DutchAuctionCreated(tokenId, msg.sender, startingPrice, reservePrice, duration);
+    }
+
+    /**
+     * @dev Buy NFT from Dutch auction at current price
+     * @param tokenId Token ID to purchase
+     */
+    function buyDutchAuction(uint256 tokenId) external payable whenNotPaused nonReentrant {
+        DutchAuction storage auction = dutchAuctions[tokenId];
+        
+        if (!auction.isActive) revert DutchAuctionNotActive();
+        if (auction.sold) revert DutchAuctionNotActive();
+        
+        uint256 currentPrice = getCurrentDutchPrice(tokenId);
+        if (msg.value < currentPrice) revert InsufficientPayment();
+
+        // Mark as sold and inactive
+        auction.isActive = false;
+        auction.sold = true;
+
+        // Transfer NFT to buyer
+        pokemonContract.transferFrom(address(this), msg.sender, tokenId);
+
+        // Calculate platform fee
+        uint256 fee = (currentPrice * platformFee) / 10000;
+        uint256 sellerProceeds = currentPrice - fee;
+
+        // Add to pending withdrawals
+        pendingWithdrawals[auction.seller] += sellerProceeds;
+        accumulatedFees += fee;
+
+        // Refund excess payment
+        if (msg.value > currentPrice) {
+            (bool refundSuccess, ) = payable(msg.sender).call{value: msg.value - currentPrice}("");
+            if (!refundSuccess) revert TransferFailed();
+        }
+
+        emit DutchAuctionPurchased(tokenId, msg.sender, currentPrice);
+    }
+
+    /**
+     * @dev Cancel Dutch auction and return NFT to seller
+     * @param tokenId Token ID to cancel auction for
+     */
+    function cancelDutchAuction(uint256 tokenId) external nonReentrant {
+        DutchAuction storage auction = dutchAuctions[tokenId];
+        
+        if (!auction.isActive) revert DutchAuctionNotActive();
+        if (auction.seller != msg.sender) revert NotSeller();
+        if (auction.sold) revert DutchAuctionNotActive();
+
+        auction.isActive = false;
+
+        // Return NFT to seller
+        pokemonContract.transferFrom(address(this), auction.seller, tokenId);
+
+        emit DutchAuctionCancelled(tokenId, msg.sender);
+    }
+
+    /**
+     * @dev Calculate current price of Dutch auction
+     * @param tokenId Token ID to get price for
+     * @return Current price based on time elapsed
+     */
+    function getCurrentDutchPrice(uint256 tokenId) public view returns (uint256) {
+        DutchAuction storage auction = dutchAuctions[tokenId];
+        
+        if (!auction.isActive) revert DutchAuctionNotActive();
+        
+        uint256 timeElapsed = block.timestamp - auction.startTime;
+        
+        // If auction duration has passed, return reserve price
+        if (timeElapsed >= auction.duration) {
+            return auction.reservePrice;
+        }
+        
+        // Calculate price decrease
+        uint256 priceRange = auction.startingPrice - auction.reservePrice;
+        uint256 priceDecrease = (priceRange * timeElapsed) / auction.duration;
+        
+        return auction.startingPrice - priceDecrease;
+    }
+
+    /**
+     * @dev Get time remaining in Dutch auction
+     */
+    function getDutchAuctionTimeRemaining(uint256 tokenId) external view returns (uint256) {
+        DutchAuction storage auction = dutchAuctions[tokenId];
+        if (!auction.isActive || block.timestamp >= auction.startTime + auction.duration) {
+            return 0;
+        }
+        return (auction.startTime + auction.duration) - block.timestamp;
+    }
+
+    // ============ Swap Functions ============
+
+    /**
+     * @dev Create a request to swap a token for another
+     * @param desiredTokenId The token the requester wants
+     * @param offeredTokenId The token the requester offers
+     */
+    function createSwapRequest(uint256 desiredTokenId, uint256 offeredTokenId) external nonReentrant whenNotPaused {
+        require(pokemonContract.ownerOf(desiredTokenId) != msg.sender, "Cannot swap for a card you already own");
+        require(pokemonContract.ownerOf(offeredTokenId) == msg.sender, "You must own the card you're offering");
+        
+        // Check if marketplace is approved to transfer the offered token
+        require(
+            pokemonContract.getApproved(offeredTokenId) == address(this) || pokemonContract.isApprovedForAll(msg.sender, address(this)),
+            "Marketplace not approved for your NFT"
+        );
+
+        // Check for duplicate requests
+        SwapRequest[] storage requests = swapRequests[desiredTokenId];
+        for (uint256 i = 0; i < requests.length; i++) {
+            if (requests[i].isActive && 
+                requests[i].requester == msg.sender && 
+                requests[i].offeredTokenId == offeredTokenId) {
+                revert("You already have an active swap request for this card");
+            }
+        }
+
+        swapRequests[desiredTokenId].push(SwapRequest({
+            requester: msg.sender,
+            desiredTokenId: desiredTokenId,
+            offeredTokenId: offeredTokenId,
+            isActive: true
+        }));
+
+        emit SwapRequestCreated(desiredTokenId, msg.sender, offeredTokenId);
+    }
+
+    /**
+     * @dev Execute a swap request
+     * @param desiredTokenId The token being requested
+     * @param requestIndex The index of the request to accept
+     */
+    function executeSwap(uint256 desiredTokenId, uint256 requestIndex) external nonReentrant whenNotPaused {
+        // Only owner of desiredTokenId can execute swap
+        if (pokemonContract.ownerOf(desiredTokenId) != msg.sender) revert NotTokenOwner();
+
+        SwapRequest storage request = swapRequests[desiredTokenId][requestIndex];
+        if (!request.isActive) revert("Request not active");
+
+        // Verify ownership of offered token still holds
+        if (pokemonContract.ownerOf(request.offeredTokenId) != request.requester) {
+            request.isActive = false;
+            revert("Requester no longer owns token");
+        }
+
+        // Execute Swap
+        // Transfer desiredTokenId (msg.sender -> requester)
+        pokemonContract.safeTransferFrom(msg.sender, request.requester, desiredTokenId);
+        
+        // Transfer offeredTokenId (requester -> msg.sender)
+        pokemonContract.safeTransferFrom(request.requester, msg.sender, request.offeredTokenId);
+
+        // Mark request as inactive
+        request.isActive = false;
+
+        // Clean up listings if any
+        if (listings[desiredTokenId].isActive) delete listings[desiredTokenId];
+        if (listings[request.offeredTokenId].isActive) delete listings[request.offeredTokenId];
+
+        emit SwapExecuted(desiredTokenId, request.offeredTokenId, request.requester, msg.sender);
+    }
+
+    /**
+     * @dev Cancel a swap request
+     */
+    function cancelSwapRequest(uint256 desiredTokenId, uint256 requestIndex) external nonReentrant {
+        SwapRequest storage request = swapRequests[desiredTokenId][requestIndex];
+        if (request.requester != msg.sender) revert NotTokenOwner();
+        
+        request.isActive = false;
+        emit SwapCancelled(desiredTokenId, msg.sender);
+    }
+
+    /**
+     * @dev Get all swap requests for a token
+     */
+    function getSwapRequests(uint256 tokenId) external view returns (SwapRequest[] memory) {
+        return swapRequests[tokenId];
     }
 
     // ============ Receive Function ============

@@ -1,19 +1,30 @@
-# Dependencies
+# Node
 node_modules/
+/node_modules
 frontend/node_modules/
 
 # Hardhat
-cache/
+/artifacts
+/cache
+/contracts/artifacts
 artifacts/
+cache/
 typechain-types/
+/typechain-types
 
 # Coverage
+/coverage
 coverage/
 coverage.json
+/coverage.json
 
 # Environment
 .env
 frontend/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # IDE
 .idea/

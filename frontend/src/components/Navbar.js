@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
-import { Wallet, Store, Grid, AlertTriangle, Egg, Sparkles } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { Wallet, Store, Grid, AlertTriangle, Egg, Sparkles, ShoppingCart } from 'lucide-react';
+import CartModal from './CartModal';
 
 function Navbar() {
   const { account, isConnecting, isCorrectNetwork, connectWallet, disconnectWallet, switchNetwork } = useWeb3();
+  const { cartItems } = useCart();
+  const [showCart, setShowCart] = useState(false);
   const location = useLocation();
 
   const navLinks = [
     { path: '/', label: 'Home', icon: Grid },
     { path: '/marketplace', label: 'Marketplace', icon: Store },
+    { path: '/collection', label: 'Collection', icon: Grid },
     { path: '/my-cards', label: 'My Cards', icon: Wallet },
     { path: '/day-care', label: 'Day Care', icon: Egg },
     { path: '/evolution', label: 'Evolution', icon: Sparkles },
@@ -39,11 +44,10 @@ function Navbar() {
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                  location.pathname === path
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${location.pathname === path
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
               >
                 <Icon size={18} />
                 <span>{label}</span>
@@ -53,6 +57,20 @@ function Navbar() {
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-3">
+            {/* Cart Button */}
+            <button
+              onClick={() => setShowCart(true)}
+              className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+              title="Shopping Cart"
+            >
+              <ShoppingCart size={22} />
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartItems.length}
+                </span>
+              )}
+            </button>
+
             {account && !isCorrectNetwork && (
               <button
                 onClick={switchNetwork}
@@ -62,7 +80,7 @@ function Navbar() {
                 <span>Wrong Network</span>
               </button>
             )}
-            
+
             {account ? (
               <div className="flex items-center space-x-3">
                 <div className="hidden sm:flex items-center space-x-2 px-3 py-2 bg-gray-800 rounded-lg">
@@ -89,6 +107,9 @@ function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Cart Modal */}
+      <CartModal isOpen={showCart} onClose={() => setShowCart(false)} />
     </nav>
   );
 }

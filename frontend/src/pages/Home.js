@@ -23,17 +23,19 @@ function Home() {
       const total = Number(totalMinted);
       setTotalItems(total.toString());
 
-      // Iterate tokens for listings/auctions + floor price
+      // Iterate tokens for listings/auctions/dutch + floor price
       let minPrice = null;
       let activeCount = 0;
       const listingsData = [];
       const auctionsData = [];
+      const dutchAuctionsData = [];
 
       for (let i = 0; i < total; i++) {
         try {
           const stats = await pokemonContract.getPokemonStats(i);
           const listing = await tradingContract.getListing(i);
           const auction = await tradingContract.getAuction(i);
+          const dutchData = await tradingContract.dutchAuctions(i);
 
           const pokemonData = {
             tokenId: i,
@@ -85,6 +87,32 @@ function Home() {
               }
             });
           }
+
+          if (dutchData.isActive && !dutchData.sold) {
+            activeCount++;
+            // Calculate current price roughly for floor price
+            // Or just use startingPrice/reservePrice as bounds?
+            // Use current price from contract for accuracy?
+            // Let's call getCurrentDutchPrice if active
+            const currentPrice = await tradingContract.getCurrentDutchPrice(i);
+
+            if (minPrice === null || currentPrice < minPrice) {
+              minPrice = currentPrice;
+            }
+
+            dutchAuctionsData.push({
+              ...pokemonData,
+              dutchAuction: {
+                seller: dutchData.seller,
+                startingPrice: ethers.formatEther(dutchData.startingPrice),
+                reservePrice: ethers.formatEther(dutchData.reservePrice),
+                startTime: Number(dutchData.startTime),
+                duration: Number(dutchData.duration),
+                isActive: dutchData.isActive,
+                currentPrice: ethers.formatEther(currentPrice)
+              }
+            });
+          }
         } catch (err) {
           // skip token errors
         }
@@ -93,17 +121,107 @@ function Home() {
       setListedCount(activeCount.toString());
       setFloorPrice(minPrice ? `${ethers.formatEther(minPrice)} ETH` : '---');
 
-      // Trending: combine listings + auctions, take up to 8
-      const combined = [...listingsData, ...auctionsData].slice(0, 8);
-      setTrendingItems(combined);
+      // ACTIVITY-BASED TRENDING ALGORITHM
+      // Show NFTs with most bids and most trades in the LAST 48 HOURS
 
-      // Volume from Sale and AuctionFinalized events
+      try {
+        const now = Math.floor(Date.now() / 1000);
+        const FORTY_EIGHT_HOURS = 48 * 60 * 60; // 48 hours in seconds
+        const cutoffTime = now - FORTY_EIGHT_HOURS;
+
+        // Get all BidPlaced events to count bids per token
+        const bidFilter = tradingContract.filters.BidPlaced();
+        const bidEvents = await tradingContract.queryFilter(bidFilter);
+
+        // Count bids per token (only from last 48 hours)
+        const bidCounts = {};
+        for (const event of bidEvents) {
+          const block = await event.getBlock();
+          const eventTime = block.timestamp;
+
+          // Only count if within last 48 hours
+          if (eventTime >= cutoffTime) {
+            const tokenId = Number(event.args.tokenId);
+            bidCounts[tokenId] = (bidCounts[tokenId] || 0) + 1;
+          }
+        }
+
+        // Get all Sale events to count trades per token
+        const saleFilter = tradingContract.filters.Sale();
+        const dutchSaleFilter = tradingContract.filters.DutchAuctionPurchased();
+
+        const [saleEvents, dutchSaleEvents] = await Promise.all([
+          tradingContract.queryFilter(saleFilter),
+          tradingContract.queryFilter(dutchSaleFilter)
+        ]);
+
+        // Count sales per token (only from last 48 hours)
+        const saleCounts = {};
+        const processSaleEvent = async (event) => {
+          const block = await event.getBlock();
+          const eventTime = block.timestamp;
+
+          // Only count if within last 48 hours
+          if (eventTime >= cutoffTime) {
+            const tokenId = Number(event.args.tokenId);
+            saleCounts[tokenId] = (saleCounts[tokenId] || 0) + 1;
+          }
+        };
+
+        for (const event of saleEvents) await processSaleEvent(event);
+        for (const event of dutchSaleEvents) await processSaleEvent(event);
+
+        // Calculate activity score for ACTIVE items only (Listed/Auction)
+        // User Requirement: "trending now should have only the ones which are listed or in bids, not the ones which are unlisted"
+        const combined = [...listingsData, ...auctionsData, ...dutchAuctionsData];
+
+        const itemsWithActivity = combined.map(item => {
+          const tokenId = item.tokenId;
+          const bidCount = bidCounts[tokenId] || 0;
+          const saleCount = saleCounts[tokenId] || 0;
+
+          // Strict Activity Score (Bids + Sales in last 48h)
+          let activityScore = (bidCount * 3) + (saleCount * 10);
+
+          return {
+            ...item,
+            activityScore,
+            bidCount,
+            saleCount,
+            // isHot is handled later based on ranking
+          };
+        });
+
+        // Sort by activity score (highest first), filter strictly for > 0, and take top 8
+        const trending = itemsWithActivity
+          .filter(item => item.activityScore > 0)
+          .sort((a, b) => b.activityScore - a.activityScore)
+          .slice(0, 8);
+
+        // Only mark the top 3 items as "Hot/Popular" to make it more exclusive
+        const finalTrending = trending.map((item, index) => ({
+          ...item,
+          isHot: index < 3 // Top 3 get the badge
+        }));
+
+        // If list is empty in strict mode, it will correctly show "No trending items"
+        setTrendingItems(finalTrending);
+      } catch (err) {
+        console.error('Failed to calculate trending:', err);
+        // Fallback: If calculation fails, strict adherence means we don't guess.
+        setTrendingItems([]);
+      }
+
+      // Volume from Sale, AuctionFinalized, and DutchAuctionPurchased events
       try {
         const saleFilter = tradingContract.filters.Sale();
         const auctionFinalizedFilter = tradingContract.filters.AuctionFinalized();
-        const [saleEvents, auctionEvents] = await Promise.all([
+        const dutchPurchasedFilter = tradingContract.filters.DutchAuctionPurchased();
+
+        const [saleEvents, auctionEvents, dutchEvents] = await Promise.all([
           tradingContract.queryFilter(saleFilter),
-          tradingContract.queryFilter(auctionFinalizedFilter)
+          tradingContract.queryFilter(auctionFinalizedFilter),
+          tradingContract.queryFilter(dutchPurchasedFilter)
         ]);
 
         let totalVolume = BigInt(0); // eslint-disable-line no-undef
@@ -112,6 +230,9 @@ function Home() {
         }
         for (const event of auctionEvents) {
           totalVolume += event.args.amount;
+        }
+        for (const event of dutchEvents) {
+          totalVolume += event.args.price; // DutchAuctionPurchased has price arg
         }
         setVolume(`${ethers.formatEther(totalVolume)} ETH`);
       } catch (err) {
@@ -138,7 +259,7 @@ function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <div className="relative w-full h-[500px] overflow-hidden rounded-2xl mb-12">
+      <div className="relative w-full h-auto min-h-[500px] md:h-[500px] overflow-hidden rounded-2xl mb-12">
         {/* Background image with ken burns */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -151,8 +272,8 @@ function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
         {/* Hero content */}
-        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
-          <h1 className="text-5xl md:text-7xl font-black mb-4 leading-tight">
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 py-12 md:py-0">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 leading-tight">
             <span className="text-yellow-400" style={{ WebkitTextStroke: '2px #ca8a04' }}>Collect.</span>{' '}
             <span className="text-blue-400" style={{ WebkitTextStroke: '2px #2563eb' }}>Trade.</span>{' '}
             <span className="text-red-500" style={{ WebkitTextStroke: '2px #dc2626' }}>Own.</span>
@@ -185,7 +306,7 @@ function Home() {
       </div>
 
       {/* Trending Now Section */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Trending Now</h2>
           <Link
@@ -209,13 +330,15 @@ function Home() {
                 listing={item.listing}
                 auction={item.auction}
                 showActions={true}
+                isHot={item.isHot}
+                compactCart={true}
               />
             ))}
           </div>
         ) : (
           <div className="text-center py-16 text-gray-400">
-            <p className="text-lg">No active listings yet</p>
-            <p className="text-sm mt-2">Connect your wallet and list some Pokemon!</p>
+            <p className="text-lg">No trending items right now</p>
+            <p className="text-sm mt-2">Be the first to bid or trade to start a trend!</p>
           </div>
         )}
       </div>

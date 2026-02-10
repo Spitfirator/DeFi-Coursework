@@ -1,19 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import PokemonCard from '../components/PokemonCard';
+import FilterSidebar from '../components/FilterSidebar';
 import { ethers } from 'ethers';
-import { Search, Filter, Loader, AlertCircle } from 'lucide-react';
+import { Search, Loader, AlertCircle, ArrowUpDown, Sparkles, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function Marketplace() {
   const { pokemonContract, tradingContract, account, refreshTrigger } = useWeb3();
   const [listings, setListings] = useState([]);
   const [auctions, setAuctions] = useState([]);
+  const [dutchAuctions, setDutchAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('listings');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // New Filter State
+  const [filters, setFilters] = useState({
+    status: 'all',
+    priceMin: '',
+    priceMax: '',
+    rarity: 'all',
+    type: 'all'
+  });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRarity, setFilterRarity] = useState('all');
-  const [filterType, setFilterType] = useState('all');
+  const [sortOrder, setSortOrder] = useState('price_asc'); // Default sort
 
   const loadMarketData = useCallback(async () => {
     if (!pokemonContract || !tradingContract) {
@@ -26,12 +36,14 @@ function Marketplace() {
       const totalMinted = await pokemonContract.totalMinted();
       const listingsData = [];
       const auctionsData = [];
+      const dutchAuctionsData = [];
 
       for (let i = 0; i < Number(totalMinted); i++) {
         try {
           const stats = await pokemonContract.getPokemonStats(i);
           const listing = await tradingContract.getListing(i);
           const auction = await tradingContract.getAuction(i);
+          const dutchAuction = await tradingContract.dutchAuctions(i);
 
           const pokemonData = {
             tokenId: i,
@@ -73,6 +85,21 @@ function Marketplace() {
               }
             });
           }
+
+          if (dutchAuction.isActive && !dutchAuction.sold) {
+            dutchAuctionsData.push({
+              ...pokemonData,
+              dutchAuction: {
+                seller: dutchAuction.seller,
+                startingPrice: ethers.formatEther(dutchAuction.startingPrice),
+                reservePrice: ethers.formatEther(dutchAuction.reservePrice),
+                startTime: Number(dutchAuction.startTime),
+                duration: Number(dutchAuction.duration),
+                isActive: dutchAuction.isActive,
+                sold: dutchAuction.sold
+              }
+            });
+          }
         } catch (err) {
           console.error(`Error loading token ${i}:`, err);
         }
@@ -80,6 +107,7 @@ function Marketplace() {
 
       setListings(listingsData);
       setAuctions(auctionsData);
+      setDutchAuctions(dutchAuctionsData);
     } catch (error) {
       console.error('Failed to load market data:', error);
       toast.error('Failed to load marketplace data');
@@ -92,53 +120,71 @@ function Marketplace() {
     loadMarketData();
   }, [loadMarketData, refreshTrigger]);
 
-  // Set up event listeners for real-time updates
+  // Event Listeners
   useEffect(() => {
     if (!tradingContract) return;
 
-    const handleListed = () => loadMarketData();
-    const handleListingCancelled = () => loadMarketData();
-    const handleSale = () => loadMarketData();
-    const handleAuctionCreated = () => loadMarketData();
-    const handleAuctionCancelled = () => loadMarketData();
-    const handleBidPlaced = () => loadMarketData();
-    const handleAuctionFinalized = () => loadMarketData();
+    const handleUpdate = () => loadMarketData();
 
-    tradingContract.on('Listed', handleListed);
-    tradingContract.on('ListingCancelled', handleListingCancelled);
-    tradingContract.on('Sale', handleSale);
-    tradingContract.on('AuctionCreated', handleAuctionCreated);
-    tradingContract.on('AuctionCancelled', handleAuctionCancelled);
-    tradingContract.on('BidPlaced', handleBidPlaced);
-    tradingContract.on('AuctionFinalized', handleAuctionFinalized);
+    tradingContract.on('Listed', handleUpdate);
+    tradingContract.on('ListingCancelled', handleUpdate);
+    tradingContract.on('Sale', handleUpdate);
+    tradingContract.on('AuctionCreated', handleUpdate);
+    tradingContract.on('AuctionCancelled', handleUpdate);
+    tradingContract.on('BidPlaced', handleUpdate);
+    tradingContract.on('AuctionFinalized', handleUpdate);
 
     return () => {
-      tradingContract.off('Listed', handleListed);
-      tradingContract.off('ListingCancelled', handleListingCancelled);
-      tradingContract.off('Sale', handleSale);
-      tradingContract.off('AuctionCreated', handleAuctionCreated);
-      tradingContract.off('AuctionCancelled', handleAuctionCancelled);
-      tradingContract.off('BidPlaced', handleBidPlaced);
-      tradingContract.off('AuctionFinalized', handleAuctionFinalized);
+      tradingContract.removeAllListeners();
     };
   }, [tradingContract, loadMarketData]);
 
-  const filteredListings = listings.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRarity = filterRarity === 'all' || item.rarity === filterRarity;
-    const matchesType = filterType === 'all' || item.pokemonType === filterType;
-    return matchesSearch && matchesRarity && matchesType;
-  });
 
-  const filteredAuctions = auctions.filter(item => {
+  const filterItem = (item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRarity = filterRarity === 'all' || item.rarity === filterRarity;
-    const matchesType = filterType === 'all' || item.pokemonType === filterType;
-    return matchesSearch && matchesRarity && matchesType;
-  });
+    const matchesRarity = filters.rarity === 'all' || item.rarity === filters.rarity;
+    const matchesType = filters.type === 'all' || item.pokemonType === filters.type;
 
-  const rarities = ['all', 'Common', 'Uncommon', 'Rare', 'Legendary'];
-  const types = ['all', 'Electric', 'Fire', 'Water', 'Grass', 'Psychic', 'Ghost', 'Rock', 'Bug', 'Normal'];
+    // Status Filter
+    let matchesStatus = false;
+    if (filters.status === 'all') matchesStatus = true;
+    else if (filters.status === 'listings' && item.listing?.isActive) matchesStatus = true;
+    else if (filters.status === 'auctions' && item.auction?.isActive) matchesStatus = true;
+    else if (filters.status === 'dutch' && item.dutchAuction?.isActive) matchesStatus = true;
+
+    // Price Filter
+    let price = null;
+    if (item.listing?.isActive) price = parseFloat(item.listing.price);
+    else if (item.auction?.isActive) price = parseFloat(item.auction.highestBid > 0 ? item.auction.highestBid : item.auction.startingPrice);
+    else if (item.dutchAuction?.isActive) price = parseFloat(item.dutchAuction.startingPrice);
+
+    const matchesMinPrice = filters.priceMin === '' || (price !== null && price >= parseFloat(filters.priceMin));
+    const matchesMaxPrice = filters.priceMax === '' || (price !== null && price <= parseFloat(filters.priceMax));
+
+    return matchesSearch && matchesRarity && matchesType && matchesStatus && matchesMinPrice && matchesMaxPrice;
+  };
+
+  const allItems = [...listings, ...auctions, ...dutchAuctions];
+
+  const filteredItems = allItems.filter(filterItem).sort((a, b) => {
+    let priceA = 0, priceB = 0;
+
+    const getPrice = (item) => {
+      if (item.listing) return parseFloat(item.listing.price);
+      if (item.auction) return parseFloat(item.auction.highestBid > 0 ? item.auction.highestBid : item.auction.startingPrice);
+      if (item.dutchAuction) return parseFloat(item.dutchAuction.startingPrice);
+      return 0;
+    };
+
+    priceA = getPrice(a);
+    priceB = getPrice(b);
+
+    if (sortOrder === 'price_asc') return priceA - priceB;
+    if (sortOrder === 'price_desc') return priceB - priceA;
+    if (sortOrder === 'id_asc') return a.tokenId - b.tokenId;
+    if (sortOrder === 'id_desc') return b.tokenId - a.tokenId;
+    return 0;
+  });
 
   if (!account) {
     return (
@@ -151,115 +197,107 @@ function Marketplace() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Marketplace</h1>
+    <div className="w-full">
+      {/* Page Layout */}
+      <div className="flex flex-col lg:flex-row">
 
-      {/* Filters */}
-      <div className="bg-gray-900/50 rounded-xl p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search Pokemon..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-primary"
-            />
+        {/* Left Sidebar - No Gap */}
+        <FilterSidebar
+          filters={filters}
+          setFilters={setFilters}
+          isMarketplace={true}
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+        />
+
+        {/* Main Content Area - With Padding */}
+        <div className="flex-1 min-h-screen px-4 sm:px-6 lg:px-8 py-8 transition-all duration-300">
+
+          {/* Sticky Top Bar container */}
+          <div className="sticky top-20 z-20 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/50 mb-6 transition-all duration-300 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
+              {/* Search & Mobile Filter Toggle */}
+              <div className="flex gap-4 w-full md:w-auto flex-1 max-w-2xl">
+                <button
+                  onClick={() => setIsFilterOpen(true)}
+                  className="lg:hidden p-3 bg-gray-900 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-700 transition-colors flex-shrink-0"
+                  aria-label="Toggle Filters"
+                >
+                  <Filter size={20} />
+                </button>
+
+                {/* Search Input */}
+                <div className="relative w-full group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-lg opacity-20 group-focus-within:opacity-75 transition duration-500 blur"></div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-white transition-colors" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Search by name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-gray-800 text-gray-100 rounded-lg focus:outline-none focus:bg-gray-800 transition-all placeholder-gray-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side Controls */}
+              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 rounded-lg border border-gray-800">
+                  <Sparkles size={14} className="text-primary" />
+                  <span className="text-gray-300 text-sm font-medium whitespace-nowrap">
+                    {filteredItems.length} Items
+                  </span>
+                </div>
+
+                {/* Styled Sort Dropdown */}
+                <div className="relative flex-1 md:flex-none">
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="w-full md:w-48 appearance-none pl-4 pr-10 py-2.5 bg-gray-900 border border-gray-800 rounded-lg focus:outline-none focus:border-primary cursor-pointer text-sm font-medium text-gray-200 hover:border-gray-700 transition-colors"
+                  >
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
+                    <option value="id_asc">ID: Low to High</option>
+                    <option value="id_desc">ID: High to Low</option>
+                  </select>
+                  <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Rarity Filter */}
-          <div className="flex items-center space-x-2">
-            <Filter size={20} className="text-gray-400" />
-            <select
-              value={filterRarity}
-              onChange={(e) => setFilterRarity(e.target.value)}
-              className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-primary"
-            >
-              {rarities.map(r => (
-                <option key={r} value={r}>{r === 'all' ? 'All Rarities' : r}</option>
+          {/* Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader className="animate-spin text-primary" size={48} />
+            </div>
+          ) : filteredItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20 animate-fadeIn">
+              {filteredItems.map((item) => (
+                <PokemonCard
+                  key={`${item.tokenId}-${item.listing ? 'l' : item.auction ? 'a' : 'd'}`}
+                  pokemon={item}
+                  listing={item.listing}
+                  auction={item.auction}
+                  dutchAuction={item.dutchAuction}
+                  showActions={true}
+                  showBuyOnly={true}
+                />
               ))}
-            </select>
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-primary"
-          >
-            {types.map(t => (
-              <option key={t} value={t}>{t === 'all' ? 'All Types' : t}</option>
-            ))}
-          </select>
+            </div>
+          ) : (
+            <div className="text-center py-32 opacity-50">
+              <Search size={64} className="mx-auto text-gray-600 mb-6" />
+              <h2 className="text-2xl font-bold mb-2 text-gray-400">No Items Found</h2>
+              <p className="text-gray-500">Try adjusting your filters or search terms</p>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6">
-        <button
-          onClick={() => setActiveTab('listings')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-            activeTab === 'listings'
-              ? 'bg-primary text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
-        >
-          Fixed Price ({filteredListings.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('auctions')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-            activeTab === 'auctions'
-              ? 'bg-secondary text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
-        >
-          Auctions ({filteredAuctions.length})
-        </button>
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader className="animate-spin text-primary" size={48} />
-        </div>
-      ) : activeTab === 'listings' ? (
-        filteredListings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredListings.map((item) => (
-              <PokemonCard
-                key={item.tokenId}
-                pokemon={item}
-                listing={item.listing}
-                showActions={true}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 text-gray-400">
-            <p>No listings found</p>
-          </div>
-        )
-      ) : (
-        filteredAuctions.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAuctions.map((item) => (
-              <PokemonCard
-                key={item.tokenId}
-                pokemon={item}
-                auction={item.auction}
-                showActions={true}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 text-gray-400">
-            <p>No active auctions</p>
-          </div>
-        )
-      )}
     </div>
   );
 }

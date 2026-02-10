@@ -1,0 +1,17 @@
+{
+  "network": "localhost",
+  "pokemonCard": {
+    "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+    "status": "UNCHANGED (existing NFTs preserved)"
+  },
+  "trading": {
+    "address": "0x976C214741b4657bd99DFD38a5c0E3ac5C99D903",
+    "platformFee": 250,
+    "newFeatures": [
+      "Swap Requests",
+      "NFT-for-NFT Trading"
+    ]
+  },
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2026-02-08T01:58:34.202Z"
+}
