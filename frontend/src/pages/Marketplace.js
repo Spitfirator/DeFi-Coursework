@@ -42,7 +42,8 @@ function Marketplace() {
             attack: Number(stats.attack),
             defense: Number(stats.defense),
             speed: Number(stats.speed),
-            generation: Number(stats.generation)
+            generation: Number(stats.generation),
+            level: Number(stats.level)
           };
 
           if (listing.isActive) {

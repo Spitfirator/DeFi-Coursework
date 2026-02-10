@@ -45,7 +45,8 @@ function CardDetail() {
         attack: Number(stats.attack),
         defense: Number(stats.defense),
         speed: Number(stats.speed),
-        generation: Number(stats.generation)
+        generation: Number(stats.generation),
+        level: Number(stats.level)
       });
 
       setOwner(cardOwner);
@@ -123,7 +124,7 @@ function CardDetail() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [auction]);
+  }, [auction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -313,6 +314,20 @@ function CardDetail() {
             'from-gray-400 to-gray-600'
           } rounded-xl flex items-center justify-center mb-6`}>
             <span className="text-9xl font-bold text-white/20">{pokemon.name.charAt(0)}</span>
+          </div>
+
+          {/* Level Display */}
+          <div className="bg-gray-800 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-gray-400 text-sm">Level</div>
+              <div className="text-2xl font-bold text-yellow-400">{pokemon.level}</div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full transition-all"
+                style={{ width: `${Math.min(pokemon.level, 100)}%` }}
+              ></div>
+            </div>
           </div>
 
           {/* Stats Grid */}

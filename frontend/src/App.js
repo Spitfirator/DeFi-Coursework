@@ -6,6 +6,9 @@ import Marketplace from './pages/Marketplace';
 import MyCards from './pages/MyCards';
 import CardDetail from './pages/CardDetail';
 import CreateAuction from './pages/CreateAuction';
+import DayCare from './pages/DayCare';
+import Evolution from './pages/Evolution';
+import Hatchery from './pages/Hatchery';
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
             <Route path="/my-cards" element={<MyCards />} />
             <Route path="/card/:tokenId" element={<CardDetail />} />
             <Route path="/create-auction/:tokenId" element={<CreateAuction />} />
+            <Route path="/day-care" element={<DayCare />} />
+            <Route path="/evolution" element={<Evolution />} />
+            <Route path="/hatchery" element={<Hatchery />} />
           </Routes>
         </main>
       </div>

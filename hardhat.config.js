@@ -3,11 +3,37 @@ require("@nomicfoundation/hardhat-toolbox");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
+    compilers: [
+      {
+        version: "0.8.20",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      }
+    ],
+    overrides: {
+      "contracts/EvolutionManager.sol": {
+        version: "0.8.20",
+        settings: {
+          viaIR: true,
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      "contracts/Hatchery.sol": {
+        version: "0.8.20",
+        settings: {
+          viaIR: true,
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
       }
     }
   },

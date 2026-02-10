@@ -49,6 +49,79 @@ async function main() {
   console.log("  - Platform Fee:", platformFee / 100, "%");
   console.log();
 
+  // Deploy DayCare (Staking Engine)
+  console.log("📦 Deploying DayCare...");
+  const DayCare = await hre.ethers.getContractFactory("DayCare");
+  const dayCare = await DayCare.deploy(pokemonCardAddress);
+  await dayCare.waitForDeployment();
+
+  const dayCareAddress = await dayCare.getAddress();
+  console.log("✅ DayCare deployed to:", dayCareAddress);
+  console.log("  - Level Interval: 60 seconds");
+  console.log();
+
+  // Deploy EvolutionManager
+  console.log("📦 Deploying EvolutionManager...");
+  const EvolutionManager = await hre.ethers.getContractFactory("EvolutionManager");
+  const evolutionManager = await EvolutionManager.deploy(pokemonCardAddress);
+  await evolutionManager.waitForDeployment();
+
+  const evolutionAddress = await evolutionManager.getAddress();
+  console.log("✅ EvolutionManager deployed to:", evolutionAddress);
+  console.log();
+
+  // Grant TRAINER_ROLE to DayCare and EvolutionManager
+  console.log("🔑 Granting TRAINER_ROLE...");
+  const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+  await (await pokemonCard.grantRole(TRAINER_ROLE, dayCareAddress)).wait();
+  console.log("  ✅ TRAINER_ROLE granted to DayCare");
+  await (await pokemonCard.grantRole(TRAINER_ROLE, evolutionAddress)).wait();
+  console.log("  ✅ TRAINER_ROLE granted to EvolutionManager");
+  console.log();
+
+  // Deploy Hatchery
+  console.log("📦 Deploying Hatchery...");
+  const Hatchery = await hre.ethers.getContractFactory("Hatchery");
+  const hatchery = await Hatchery.deploy(pokemonCardAddress, 15, 15, "egg.json");
+  await hatchery.waitForDeployment();
+
+  const hatcheryAddress = await hatchery.getAddress();
+  console.log("✅ Hatchery deployed to:", hatcheryAddress);
+  console.log("  - Breed Duration: 15 seconds");
+  console.log("  - Incubation Duration: 15 seconds");
+  console.log();
+
+  // Grant roles to Hatchery
+  console.log("🔑 Granting roles to Hatchery...");
+  const MINTER_ROLE = await pokemonCard.MINTER_ROLE();
+  await (await pokemonCard.grantRole(TRAINER_ROLE, hatcheryAddress)).wait();
+  console.log("  ✅ TRAINER_ROLE granted to Hatchery");
+  await (await pokemonCard.grantRole(MINTER_ROLE, hatcheryAddress)).wait();
+  console.log("  ✅ MINTER_ROLE granted to Hatchery");
+  console.log();
+
+  // Register evolution paths
+  console.log("🧬 Registering evolution paths...");
+  const evolutions = [
+    ["Bulbasaur", "Venusaur", "Grass", "Rare", 32, 30, 20, 20, 10],
+    ["Charmander", "Charizard", "Fire", "Rare", 36, 28, 29, 18, 20],
+    ["Squirtle", "Blastoise", "Water", "Rare", 36, 29, 23, 25, 12],
+    ["Magikarp", "Gyarados", "Water", "Rare", 20, 50, 45, 30, 25],
+    ["Pikachu", "Raichu", "Electric", "Uncommon", 25, 20, 20, 15, 20],
+    ["Growlithe", "Arcanine", "Fire", "Rare", 30, 30, 25, 20, 20],
+    ["Eevee", "Jolteon", "Electric", "Uncommon", 25, 15, 25, 15, 30],
+  ];
+
+  for (const evo of evolutions) {
+    await (await evolutionManager.registerEvolution(...evo)).wait();
+    console.log(`  ✅ ${evo[0]} → ${evo[1]} (Level ${evo[4]})`);
+  }
+
+  // Set base token URI on EvolutionManager
+  await (await evolutionManager.setBaseTokenURI(IPFS_BASE_URI)).wait();
+  console.log("  ✅ Base token URI set on EvolutionManager");
+  console.log();
+
   // Read metadata from nft_metadata folder and mint Pokemon
   console.log("🎴 Minting Pokemon cards from IPFS metadata...\n");
   
@@ -132,6 +205,9 @@ async function main() {
   console.log("📋 Contract Addresses:");
   console.log("  PokemonCard:", pokemonCardAddress);
   console.log("  PokemonTrading:", tradingAddress);
+  console.log("  DayCare:", dayCareAddress);
+  console.log("  EvolutionManager:", evolutionAddress);
+  console.log("  Hatchery:", hatcheryAddress);
   console.log();
   console.log("🔗 IPFS Metadata:");
   console.log("  CID:", IPFS_CID);
@@ -141,6 +217,9 @@ async function main() {
   console.log("📝 Save these addresses in your frontend .env file:");
   console.log(`  REACT_APP_POKEMON_CARD_ADDRESS=${pokemonCardAddress}`);
   console.log(`  REACT_APP_TRADING_ADDRESS=${tradingAddress}`);
+  console.log(`  REACT_APP_DAYCARE_ADDRESS=${dayCareAddress}`);
+  console.log(`  REACT_APP_EVOLUTION_ADDRESS=${evolutionAddress}`);
+  console.log(`  REACT_APP_HATCHERY_ADDRESS=${hatcheryAddress}`);
 
   // Save deployment info to file
   const deploymentInfo = {
@@ -153,6 +232,18 @@ async function main() {
     trading: {
       address: tradingAddress,
       platformFee: platformFee
+    },
+    dayCare: {
+      address: dayCareAddress,
+      levelInterval: 60
+    },
+    evolution: {
+      address: evolutionAddress,
+      registeredPaths: evolutions.length
+    },
+    hatchery: {
+      address: hatcheryAddress,
+      hatchDuration: 15
     },
     ipfs: {
       cid: IPFS_CID,
@@ -175,6 +266,9 @@ async function main() {
   const envPath = path.join(__dirname, "../frontend/.env");
   const envContent = `REACT_APP_POKEMON_CARD_ADDRESS=${pokemonCardAddress}
 REACT_APP_TRADING_ADDRESS=${tradingAddress}
+REACT_APP_DAYCARE_ADDRESS=${dayCareAddress}
+REACT_APP_EVOLUTION_ADDRESS=${evolutionAddress}
+REACT_APP_HATCHERY_ADDRESS=${hatcheryAddress}
 `;
 
   fs.writeFileSync(envPath, envContent);

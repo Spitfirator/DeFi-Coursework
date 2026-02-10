@@ -345,6 +345,164 @@ describe("PokemonCard", function () {
     });
   });
 
+  describe("Trainer Functions", function () {
+    const pokemonData = {
+      uri: "ipfs://QmTest123",
+      name: "Pikachu",
+      pokemonType: "Electric",
+      rarity: "Rare",
+      hp: 35,
+      attack: 55,
+      defense: 40,
+      speed: 90,
+      generation: 1
+    };
+
+    it("Should mint with default level 1", async function () {
+      const { pokemonCard, owner, user1 } = await loadFixture(deployPokemonCardFixture);
+
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      const stats = await pokemonCard.getPokemonStats(0);
+      expect(stats.level).to.equal(1);
+    });
+
+    it("Should allow TRAINER_ROLE to updateStats", async function () {
+      const { pokemonCard, owner, minter, user1 } = await loadFixture(deployPokemonCardFixture);
+      const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+
+      // Mint a Pokemon
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      // Grant TRAINER_ROLE to minter
+      await pokemonCard.connect(owner).grantRole(TRAINER_ROLE, minter.address);
+
+      // Update stats
+      await pokemonCard.connect(minter).updateStats(0, 5, 60, 80, 65);
+
+      const stats = await pokemonCard.getPokemonStats(0);
+      expect(stats.level).to.equal(5);
+      expect(stats.hp).to.equal(60);
+      expect(stats.attack).to.equal(80);
+      expect(stats.defense).to.equal(65);
+    });
+
+    it("Should reject updateStats without TRAINER_ROLE", async function () {
+      const { pokemonCard, owner, user1 } = await loadFixture(deployPokemonCardFixture);
+
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      await expect(
+        pokemonCard.connect(user1).updateStats(0, 5, 60, 80, 65)
+      ).to.be.reverted;
+    });
+
+    it("Should emit PokemonStatsUpdated on updateStats", async function () {
+      const { pokemonCard, owner, minter, user1 } = await loadFixture(deployPokemonCardFixture);
+      const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+      await pokemonCard.connect(owner).grantRole(TRAINER_ROLE, minter.address);
+
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      await expect(pokemonCard.connect(minter).updateStats(0, 5, 60, 80, 65))
+        .to.emit(pokemonCard, "PokemonStatsUpdated")
+        .withArgs(0, pokemonData.name);
+    });
+
+    it("Should allow TRAINER_ROLE to burnAndMint", async function () {
+      const { pokemonCard, owner, minter, user1 } = await loadFixture(deployPokemonCardFixture);
+      const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+      await pokemonCard.connect(owner).grantRole(TRAINER_ROLE, minter.address);
+
+      // Mint original Pokemon
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      // Burn and mint evolved version
+      await pokemonCard.connect(minter).burnAndMint(
+        user1.address, 0, "ipfs://evolved",
+        "Raichu", "Electric", "Rare",
+        80, 90, 70, 110, 25, 1
+      );
+
+      // Old token should be burned
+      await expect(pokemonCard.ownerOf(0)).to.be.reverted;
+
+      // New token should exist
+      expect(await pokemonCard.ownerOf(1)).to.equal(user1.address);
+      const stats = await pokemonCard.getPokemonStats(1);
+      expect(stats.name).to.equal("Raichu");
+      expect(stats.level).to.equal(25);
+      expect(stats.hp).to.equal(80);
+    });
+
+    it("Should reject burnAndMint without TRAINER_ROLE", async function () {
+      const { pokemonCard, owner, user1 } = await loadFixture(deployPokemonCardFixture);
+
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      await expect(
+        pokemonCard.connect(user1).burnAndMint(
+          user1.address, 0, "ipfs://evolved",
+          "Raichu", "Electric", "Rare",
+          80, 90, 70, 110, 25, 1
+        )
+      ).to.be.reverted;
+    });
+
+    it("Should set exists=false on burned token stats", async function () {
+      const { pokemonCard, owner, minter, user1 } = await loadFixture(deployPokemonCardFixture);
+      const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+      await pokemonCard.connect(owner).grantRole(TRAINER_ROLE, minter.address);
+
+      await pokemonCard.connect(owner).adminMint(
+        user1.address, pokemonData.uri, pokemonData.name,
+        pokemonData.pokemonType, pokemonData.rarity,
+        pokemonData.hp, pokemonData.attack, pokemonData.defense,
+        pokemonData.speed, pokemonData.generation
+      );
+
+      await pokemonCard.connect(minter).burnAndMint(
+        user1.address, 0, "ipfs://evolved",
+        "Raichu", "Electric", "Rare",
+        80, 90, 70, 110, 25, 1
+      );
+
+      // getPokemonStats should revert for burned token (exists is false)
+      await expect(pokemonCard.getPokemonStats(0))
+        .to.be.revertedWithCustomError(pokemonCard, "InvalidTokenId");
+    });
+  });
+
   describe("Enumerable", function () {
     it("Should enumerate tokens correctly", async function () {
       const { pokemonCard, owner, user1 } = await loadFixture(deployPokemonCardFixture);

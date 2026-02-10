@@ -45,7 +45,9 @@ function MyCards() {
           attack: Number(stats.attack),
           defense: Number(stats.defense),
           speed: Number(stats.speed),
-          generation: Number(stats.generation)
+          generation: Number(stats.generation),
+          level: Number(stats.level),
+          isEgg: stats.isEgg
         });
       }
 
@@ -252,30 +254,32 @@ function MyCards() {
           {myCards.map((card) => (
             <div key={card.tokenId} className="relative group">
               <PokemonCard pokemon={card} />
-              
-              {/* Action Overlay */}
-              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3 rounded-xl">
-                <button
-                  onClick={() => {
-                    setSelectedCard(card);
-                    setShowListModal(true);
-                  }}
-                  className="flex items-center space-x-1 px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors"
-                >
-                  <Tag size={16} />
-                  <span>List</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedCard(card);
-                    setShowAuctionModal(true);
-                  }}
-                  className="flex items-center space-x-1 px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-                >
-                  <Gavel size={16} />
-                  <span>Auction</span>
-                </button>
-              </div>
+
+              {/* Action Overlay - hidden for eggs */}
+              {!card.isEgg && (
+                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3 rounded-xl">
+                  <button
+                    onClick={() => {
+                      setSelectedCard(card);
+                      setShowListModal(true);
+                    }}
+                    className="flex items-center space-x-1 px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors"
+                  >
+                    <Tag size={16} />
+                    <span>List</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCard(card);
+                      setShowAuctionModal(true);
+                    }}
+                    className="flex items-center space-x-1 px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+                  >
+                    <Gavel size={16} />
+                    <span>Auction</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

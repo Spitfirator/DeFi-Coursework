@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
-import { Wallet, Store, Grid, AlertTriangle } from 'lucide-react';
+import { Wallet, Store, Grid, AlertTriangle, Egg, Sparkles } from 'lucide-react';
 
 function Navbar() {
   const { account, isConnecting, isCorrectNetwork, connectWallet, disconnectWallet, switchNetwork } = useWeb3();
@@ -11,6 +11,8 @@ function Navbar() {
     { path: '/', label: 'Home', icon: Grid },
     { path: '/marketplace', label: 'Marketplace', icon: Store },
     { path: '/my-cards', label: 'My Cards', icon: Wallet },
+    { path: '/day-care', label: 'Day Care', icon: Egg },
+    { path: '/evolution', label: 'Evolution', icon: Sparkles },
   ];
 
   const formatAddress = (address) => {

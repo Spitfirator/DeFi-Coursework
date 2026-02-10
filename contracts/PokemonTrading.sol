@@ -6,6 +6,23 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IPokemonCardStats {
+    struct PokemonStats {
+        string name;
+        string pokemonType;
+        string rarity;
+        uint256 hp;
+        uint256 attack;
+        uint256 defense;
+        uint256 speed;
+        uint256 generation;
+        uint256 level;
+        bool exists;
+        bool isEgg;
+    }
+    function getPokemonStats(uint256 tokenId) external view returns (PokemonStats memory);
+}
+
 /**
  * @title PokemonTrading
  * @dev Trading contract for Pokemon NFTs with fixed-price sales and auctions
@@ -113,6 +130,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     error ReservePriceNotMet();
     error AuctionHasBids();
     error NoFeesToWithdraw();
+    error CannotTradeEgg();
 
     // ============ Constructor ============
     constructor(address _pokemonContract, uint256 _platformFee) {
@@ -143,6 +161,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (pokemonContract.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
         if (listings[tokenId].isActive) revert TokenAlreadyListed();
         if (auctions[tokenId].isActive) revert TokenInAuction();
+        if (IPokemonCardStats(address(pokemonContract)).getPokemonStats(tokenId).isEgg) revert CannotTradeEgg();
 
         // Transfer NFT to contract for escrow
         pokemonContract.transferFrom(msg.sender, address(this), tokenId);
@@ -261,6 +280,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (pokemonContract.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
         if (listings[tokenId].isActive) revert TokenAlreadyListed();
         if (auctions[tokenId].isActive) revert TokenInAuction();
+        if (IPokemonCardStats(address(pokemonContract)).getPokemonStats(tokenId).isEgg) revert CannotTradeEgg();
 
         // Transfer NFT to contract for escrow
         pokemonContract.transferFrom(msg.sender, address(this), tokenId);

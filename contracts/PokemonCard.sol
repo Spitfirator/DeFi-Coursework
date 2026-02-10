@@ -24,6 +24,7 @@ contract PokemonCard is
     // ============ Roles ============
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant TRAINER_ROLE = keccak256("TRAINER_ROLE");
 
     // ============ State Variables ============
     uint256 private _nextTokenId;
@@ -41,7 +42,9 @@ contract PokemonCard is
         uint256 defense;
         uint256 speed;
         uint256 generation;
+        uint256 level;
         bool exists;
+        bool isEgg;             // True for unhatched eggs
     }
 
     // ============ Mappings ============
@@ -62,6 +65,7 @@ contract PokemonCard is
     event EmergencyStop(address indexed by);
     event EmergencyResume(address indexed by);
     event BaseURIUpdated(string oldURI, string newURI);
+    event PokemonHatched(uint256 indexed tokenId, string name, address indexed owner);
 
     // ============ Errors ============
     error MaxSupplyReached();
@@ -132,7 +136,9 @@ contract PokemonCard is
             defense: defense,
             speed: speed,
             generation: generation,
-            exists: true
+            level: 1,
+            exists: true,
+            isEgg: false
         });
 
         emit PokemonMinted(tokenId, to, name, rarity);
@@ -174,7 +180,9 @@ contract PokemonCard is
             defense: defense,
             speed: speed,
             generation: generation,
-            exists: true
+            level: 1,
+            exists: true,
+            isEgg: false
         });
 
         emit PokemonMinted(tokenId, to, name, rarity);
@@ -204,6 +212,150 @@ contract PokemonCard is
      */
     function remainingSupply() external view returns (uint256) {
         return maxSupply - _nextTokenId;
+    }
+
+    // ============ Trainer Functions (for DayCare / Evolution) ============
+
+    /**
+     * @dev Update a Pokemon's stats (called by DayCare on unstake)
+     * @notice Only accounts with TRAINER_ROLE can call this
+     */
+    function updateStats(
+        uint256 tokenId,
+        uint256 newLevel,
+        uint256 newHp,
+        uint256 newAttack,
+        uint256 newDefense
+    ) external onlyRole(TRAINER_ROLE) {
+        if (!pokemonStats[tokenId].exists) revert InvalidTokenId();
+
+        pokemonStats[tokenId].level = newLevel;
+        pokemonStats[tokenId].hp = newHp;
+        pokemonStats[tokenId].attack = newAttack;
+        pokemonStats[tokenId].defense = newDefense;
+
+        emit PokemonStatsUpdated(tokenId, pokemonStats[tokenId].name);
+    }
+
+    /**
+     * @dev Mint an egg NFT with placeholder stats (called by Hatchery)
+     * @notice Only accounts with MINTER_ROLE can call this
+     */
+    function mintEgg(
+        address to,
+        string memory uri
+    ) external onlyRole(MINTER_ROLE) whenNotPaused nonReentrant returns (uint256) {
+        if (to == address(0)) revert ZeroAddress();
+        if (_nextTokenId >= maxSupply) revert MaxSupplyReached();
+
+        uint256 tokenId = _nextTokenId++;
+
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+
+        pokemonStats[tokenId] = PokemonStats({
+            name: "Egg",
+            pokemonType: "Unknown",
+            rarity: "Common",
+            hp: 0,
+            attack: 0,
+            defense: 0,
+            speed: 0,
+            generation: 0,
+            level: 0,
+            exists: true,
+            isEgg: true
+        });
+
+        emit PokemonMinted(tokenId, to, "Egg", "Common");
+
+        return tokenId;
+    }
+
+    /**
+     * @dev Transform an egg into a hatched Pokemon (called by Hatchery)
+     * @notice Only accounts with TRAINER_ROLE can call this
+     */
+    function hatchEgg(
+        uint256 tokenId,
+        string memory name,
+        string memory pokemonType,
+        string memory rarity,
+        uint256 hp,
+        uint256 attack,
+        uint256 defense,
+        uint256 speed,
+        uint256 generation,
+        string memory uri
+    ) external onlyRole(TRAINER_ROLE) {
+        if (!pokemonStats[tokenId].exists) revert InvalidTokenId();
+        require(pokemonStats[tokenId].isEgg, "Not an egg");
+
+        pokemonStats[tokenId].name = name;
+        pokemonStats[tokenId].pokemonType = pokemonType;
+        pokemonStats[tokenId].rarity = rarity;
+        pokemonStats[tokenId].hp = hp;
+        pokemonStats[tokenId].attack = attack;
+        pokemonStats[tokenId].defense = defense;
+        pokemonStats[tokenId].speed = speed;
+        pokemonStats[tokenId].generation = generation;
+        pokemonStats[tokenId].level = 1;
+        pokemonStats[tokenId].isEgg = false;
+
+        _setTokenURI(tokenId, uri);
+
+        emit PokemonHatched(tokenId, name, ownerOf(tokenId));
+    }
+
+    /**
+     * @dev Burn an existing token and mint a new evolved one (called by EvolutionManager)
+     * @notice Only accounts with TRAINER_ROLE can call this
+     */
+    function burnAndMint(
+        address to,
+        uint256 oldTokenId,
+        string memory uri,
+        string memory name,
+        string memory pokemonType,
+        string memory rarity,
+        uint256 hp,
+        uint256 attack,
+        uint256 defense,
+        uint256 speed,
+        uint256 level,
+        uint256 generation
+    ) external onlyRole(TRAINER_ROLE) whenNotPaused nonReentrant returns (uint256) {
+        if (to == address(0)) revert ZeroAddress();
+        if (_nextTokenId >= maxSupply) revert MaxSupplyReached();
+        if (hp == 0 || attack == 0 || defense == 0) revert InvalidStats();
+        if (!pokemonStats[oldTokenId].exists) revert InvalidTokenId();
+
+        // Burn the old token
+        _burn(oldTokenId);
+        pokemonStats[oldTokenId].exists = false;
+
+        // Mint new evolved token
+        uint256 newTokenId = _nextTokenId++;
+        _safeMint(to, newTokenId);
+        _setTokenURI(newTokenId, uri);
+
+        pokemonStats[newTokenId] = PokemonStats({
+            name: name,
+            pokemonType: pokemonType,
+            rarity: rarity,
+            hp: hp,
+            attack: attack,
+            defense: defense,
+            speed: speed,
+            generation: generation,
+            level: level,
+            exists: true,
+            isEgg: false
+        });
+
+        emit PokemonMinted(newTokenId, to, name, rarity);
+
+        return newTokenId;
     }
 
     // ============ Admin Functions ============

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Flame, Droplet, Leaf, Brain, Ghost, Mountain, Bug, Star } from 'lucide-react';
+import { Zap, Flame, Droplet, Leaf, Brain, Ghost, Mountain, Bug, Star, Egg } from 'lucide-react';
 
 const typeColors = {
   Electric: { bg: 'from-yellow-400 to-yellow-600', icon: Zap },
@@ -22,7 +22,8 @@ const pokemonToPokedexId = {
   'Lapras': 131, 'Tyranitar': 248, 'Metagross': 376, 'Salamence': 373, 'Garchomp': 445,
   'Pikachu': 25, 'Bulbasaur': 1, 'Charmander': 4, 'Squirtle': 7, 'Pidgey': 16,
   'Rattata': 19, 'Zubat': 41, 'Geodude': 74, 'Magikarp': 129, 'Caterpie': 10,
-  'Eevee': 133, 'Jigglypuff': 39, 'Psyduck': 54, 'Growlithe': 58, 'Oddish': 43
+  'Eevee': 133, 'Jigglypuff': 39, 'Psyduck': 54, 'Growlithe': 58, 'Oddish': 43,
+  'Raichu': 26, 'Jolteon': 135
 };
 
 // Get Pokemon image URL from PokeAPI sprites
@@ -42,13 +43,37 @@ const rarityStyles = {
 };
 
 function PokemonCard({ pokemon, listing, auction, showActions = false }) {
-  const { tokenId, name, pokemonType, rarity, hp, attack, defense, speed } = pokemon;
+  const { tokenId, name, pokemonType, rarity, hp, attack, defense, speed, level, isEgg } = pokemon;
   const typeConfig = typeColors[pokemonType] || typeColors.Normal;
   const TypeIcon = typeConfig.icon;
   const [imageError, setImageError] = useState(false);
-  
+
   // Get Pokemon image from PokeAPI sprites (IPFS metadata points to these)
   const imageUrl = getPokemonImageUrl(name);
+
+  // Egg display
+  if (isEgg) {
+    return (
+      <div className="relative bg-gray-900 rounded-xl overflow-hidden border-2 border-yellow-500/50 hover:scale-105 transition-transform duration-300">
+        <div className="absolute top-2 right-2 z-10">
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-400">
+            Egg
+          </span>
+        </div>
+        <div className="h-48 bg-gradient-to-br from-yellow-200 to-yellow-400 flex items-center justify-center relative overflow-hidden">
+          <Egg size={64} className="text-white/80 drop-shadow-lg" />
+          <div className="absolute inset-0 bg-yellow-300/10 animate-pulse" />
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-bold">Egg</h3>
+            <span className="text-sm text-gray-400">#{tokenId}</span>
+          </div>
+          <p className="text-gray-400 text-sm">Incubating... This egg hasn't hatched yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative bg-gray-900 rounded-xl overflow-hidden border-2 ${rarityStyles[rarity] || 'border-gray-700'} hover:scale-105 transition-transform duration-300`}>
@@ -67,8 +92,8 @@ function PokemonCard({ pokemon, listing, auction, showActions = false }) {
       {/* Card Image - Uses PokeAPI official artwork (same as IPFS metadata) */}
       <div className={`h-48 bg-gradient-to-br ${typeConfig.bg} flex items-center justify-center relative overflow-hidden`}>
         {imageUrl && !imageError ? (
-          <img 
-            src={imageUrl} 
+          <img
+            src={imageUrl}
             alt={name}
             className="h-40 w-40 object-contain z-10 drop-shadow-lg"
             onError={() => setImageError(true)}
@@ -92,10 +117,15 @@ function PokemonCard({ pokemon, listing, auction, showActions = false }) {
           <span className="text-sm text-gray-400">#{tokenId}</span>
         </div>
 
-        <div className="flex items-center space-x-2 mb-3">
+        <div className="flex items-center justify-between mb-3">
           <span className={`px-2 py-1 text-xs rounded bg-gradient-to-r ${typeConfig.bg}`}>
             {pokemonType}
           </span>
+          {level !== undefined && (
+            <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded">
+              Lv.{level}
+            </span>
+          )}
         </div>
 
         {/* Stats */}
