@@ -1,135 +1,168 @@
 # Pokemon NFT Marketplace - DeFi Coursework
 
-A decentralized NFT marketplace for trading Pokemon NFTs with multiple sale mechanisms and front-running protection.
+A decentralized NFT marketplace for trading Pokemon NFTs with multiple sale mechanisms, breeding, evolution, and front-running protection.
 
-## 🚀 Deployed Contracts (Local Testnet)
+## Deployed Contracts (Local Testnet)
 
-- **PokemonNFT:** `0x0165878A594ca255338adfa4d48449f69242Eb8F`
-- **PokemonMarketplace:** `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853`
-- **Network:** Hardhat Local (localhost:8545)
+All contracts are deployed via `scripts/deploy.js` to the Hardhat local network (localhost:8545):
+
+- **PokemonCard** - ERC721 NFT contract
+- **PokemonTrading** - Marketplace with fixed-price, English auction, Dutch auction, and swap
+- **DayCare** - Staking contract for time-based levelling
+- **EvolutionManager** - Burn-and-mint evolution system
+- **Hatchery** - 3-stage breeding lifecycle
 
 ### IPFS Metadata Storage
 
 - **CID:** `bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4`
 - **Base URI:** `https://ipfs.io/ipfs/bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4/`
 - **Total NFTs:** 100
-- **Status:** ✅ All metadata accessible
+- **Status:** All metadata accessible
 
 ## Features
 
 ### Core Functionality
-- ✅ **ERC721A NFT Contract** with Pokemon metadata (name, type, rarity, level)
-- ✅ **Fixed-Price Listings** with 1% marketplace fee
-- ✅ **English Auctions** with competitive bidding
-- ✅ **Dutch Auctions** with declining prices over time
-- ✅ **Batch Minting** for gas-efficient collection deployment
-- ✅ **Pull Payment Pattern** for secure fund withdrawals
+- **ERC721 NFT Contract** with Pokemon metadata (name, type, rarity, stats, level, generation)
+- **Fixed-Price Listings** with configurable marketplace fee (default 2.5%)
+- **English Auctions** with competitive bidding, reserve prices, and bid extensions
+- **Dutch Auctions** with declining prices over time
+- **NFT Swaps** for direct peer-to-peer token exchanges
+- **Pull Payment Pattern** for secure fund withdrawals
 
-### Security Features (Coursework Requirement)
-- ✅ **Commit-Reveal Scheme** for front-running protection on purchases
-- ✅ **Stale Listing Protection** verifies NFT ownership before transfer
-- ✅ **Reentrancy Guards** on all state-changing functions
-- ✅ **Pausable** emergency stop mechanism
-- ✅ **Access Control** with Ownable pattern
+### DayCare (Staking)
+- Stake Pokemon NFTs to earn time-based level-ups
+- Configurable levelling interval (seconds per level)
+- Stat boosts on unstake (+5 HP/ATK/DEF per level gained)
+- Level cap at 100
+- Staked NFTs are held in escrow (cannot be traded while staked)
 
-### Business Logic
-- Legendary Pokemon (rarity 5) can only be sold via auction
-- Dutch auctions require rarity 4+ and specific price ranges
-- Rarity-based restrictions with graceful fallback for generic ERC721
+### Evolution
+- Burn-and-mint evolution mechanic
+- Admin-registered evolution paths (e.g. Charmander -> Charmeleon -> Charizard)
+- Level threshold requirements for evolution
+- Stat boosts applied on evolution
+- Preserves owner, level, and generation
+
+### Hatchery (Breeding)
+- 3-stage breeding lifecycle: breed -> mintEgg -> hatch
+- Parents locked in escrow during breeding timer
+- Egg NFTs are tradeable ERC721 tokens
+- Offspring genetics derived from both parents (50/50 species, averaged stats with variance)
+- Generation tracking (max of parents + 1)
+- Legendary Pokemon cannot breed
+
+### Security Features
+- **Commit-Reveal Scheme** for front-running protection on auction bids
+- **Reentrancy Guards** on all state-changing functions
+- **Pausable** emergency stop mechanism
+- **Access Control** with role-based permissions (MINTER_ROLE, PAUSER_ROLE, TRAINER_ROLE)
+- **Pull Payment Pattern** prevents gas griefing
+- **Egg Trading Restrictions** prevent trading unhatched eggs on the marketplace
 
 ## Smart Contracts
 
-### PokemonNFT.sol
-ERC721A-based NFT contract with Pokemon-specific metadata:
-- Gas-efficient batch minting (~60% gas savings vs standard ERC721)
-- On-chain metadata storage (name, type, rarity, level)
-- Owner-controlled minting with rarity/level validation
-- Supply constraints (5 Legendary, 25 Rare, 70 Common)
+### PokemonCard.sol
+ERC721-based NFT contract with Pokemon-specific metadata:
+- OpenZeppelin ERC721 + ERC721Enumerable + ERC721URIStorage
+- On-chain metadata storage (name, type, rarity, HP, attack, defense, speed, generation, level)
+- Role-based access control (admin minting, trainer stat updates)
+- Egg minting and hatching support (for Hatchery integration)
+- Burn-and-mint support (for Evolution integration)
 - IPFS-compatible tokenURI system
+- Emergency pause mechanism
 
-### PokemonMarketplace.sol
+### PokemonTrading.sol
 Multi-mechanism trading platform:
 - Fixed-price sales with instant purchase
-- English auctions with time-based bidding
+- English auctions with reserve prices, 5% minimum bid increments, and anti-sniping extensions
 - Dutch auctions with linear price decay
-- Commit-reveal for front-running protection
+- Commit-reveal for front-running protection on auction bids
+- NFT swap requests for peer-to-peer exchanges
 - Seller cancel functions for all sale types
-- 1% marketplace fee with pull payment pattern
+- Configurable platform fee (basis points) with pull payment pattern
+- Egg trading prevention
+
+### DayCare.sol
+Staking contract for Pokemon levelling:
+- Time-based level accumulation (configurable interval)
+- Flat stat boosts per level gained (HP, attack, defense)
+- Level cap enforcement (max 100)
+- NFTs held in escrow via ERC721Holder
+- Checks-Effects-Interactions pattern throughout
+
+### EvolutionManager.sol
+Evolution system using burn-and-mint:
+- Admin-registered evolution paths with level thresholds and stat boosts
+- Burns old NFT and mints new evolved NFT
+- Preserves owner, level, and generation
+- Preview function for frontend UI
+- 23 evolution paths registered at deploy (including 3-stage chains)
+
+### Hatchery.sol
+Breeding contract with 3-stage lifecycle:
+- Stage 1 (breed): Lock two parent NFTs in escrow, snapshot stats
+- Stage 2 (mintEgg): After breed timer, mint egg NFT and release parents
+- Stage 3 (hatch): After incubation timer, hatch egg with inherited genetics
+- Legendary breeding restriction
+- Pseudo-random genetics with parent stat averaging and variance
 
 ## Front-Running Mitigation
 
 ### Why Commit-Reveal?
 
-The coursework requires front-running prevention for sensitive operations. We implemented a two-phase commit-reveal scheme:
+The coursework requires front-running prevention for sensitive operations. We implemented a two-phase commit-reveal scheme for auction bids:
 
-**Phase 1 - Commit**: User hides their intent by submitting a hash
+**Phase 1 - Commit**: Bidder hides their intent by submitting a hash
 ```javascript
-const commitHash = keccak256(nftContract, tokenId, maxPrice, nonce);
-await marketplace.commitToBuy(commitHash, { value: maxPrice });
+const commitHash = keccak256(abi.encodePacked(bidder, amount, secret));
+await trading.commitBid(tokenId, commitHash);
 ```
 
-**Phase 2 - Reveal**: After 1+ blocks, user reveals and executes
+**Phase 2 - Reveal**: Bidder reveals and places their actual bid
 ```javascript
-await marketplace.revealAndBuyFixedPrice(nftContract, tokenId, maxPrice, nonce);
+await trading.revealBid(tokenId, secret, { value: bidAmount });
 ```
 
-### Scope: Buys Only, Not Bids
+### Scope
 
-**Commit-reveal is applied to fixed-price and Dutch auction purchases only.**
+**Commit-reveal is applied to English auction bids.** A direct `placeBid()` function is also available as a simpler alternative.
 
-**Why not auctions?**
-- **Fixed-price**: Direct front-running risk (attacker copies transaction)
-- **Dutch auctions**: Sniping risk (optimal prices can be front-run)
-- **Auctions**: Self-correcting - if front-run, simply bid higher. The auction format inherently mitigates front-running through competitive bidding.
-
-Adding commit-reveal to auctions would increase UX complexity without meaningful security benefit.
+Fixed-price purchases (`buyCard`) and Dutch auction purchases (`buyDutchAuction`) are direct single-transaction operations.
 
 ## Design Decisions
 
-### PokemonNFT Import
-The marketplace imports `PokemonNFT.sol` directly to read metadata for sale restrictions:
+### PokemonCard Import
+The trading and auxiliary contracts interact with `PokemonCard.sol` via interfaces to read metadata:
 
 ```solidity
-import "./PokemonNFT.sol";
+interface IPokemonCardStats {
+    function getPokemonStats(uint256 tokenId) external view returns (PokemonStats memory);
+}
 ```
 
 **Rationale**:
-- Enables rarity-based business logic (Legendary = auction only)
-- Uses `try/catch` for compatibility with generic ERC721
-- Only reads data, never modifies NFT state
-- Falls back gracefully for non-Pokemon NFTs
-
-This design allows Pokemon-specific rules while maintaining ERC721 compatibility.
+- Enables egg-trading prevention (marketplace checks `isEgg`)
+- DayCare and EvolutionManager update stats via TRAINER_ROLE
+- Hatchery mints eggs and hatches them via MINTER_ROLE and TRAINER_ROLE
+- Only reads/updates data through defined roles, never bypasses access control
 
 ## Testing
 
-### Test Results
-```
-✅ 30 tests passing
-✅ 0 failing
-✅ All security features verified
-✅ Gas optimization confirmed
-```
-
 ### Test Coverage
-- **30 total tests** across 6 test files
-- **100% passing** on all core functionality
+- **141 tests** across 10 test files
+- Covers all 5 contracts
 
 #### Test Files
-1. `test/PokemonMarketplace.test.ts` - Core marketplace (fixed-price, auctions)
-2. `test/PokemonMarketplace_Dutch.test.ts` - Dutch auction mechanics
-3. `test/PokemonMarketplace_CommitReveal.test.ts` - Security features (commit-reveal)
-4. `test/PokemonMarketplace_CommitmentRecovery.test.ts` - Commitment cancellation
-5. `test/PokemonMarketplace_FeePause.test.ts` - Fees and emergency controls
-6. `test/PokemonNFT_Supply.test.ts` - Supply constraints
-
-#### Commit-Reveal Tests
-✅ Successful commit-reveal flows (fixed-price & Dutch)  
-✅ Commitment expiration handling  
-✅ Stale listing detection  
-✅ Pull pattern refunds  
-✅ Cancel functions (listing, auction, Dutch auction)  
-✅ Error cases (no commitment, wrong parameters)
+1. `test/PokemonCard.test.js` - NFT minting, metadata, access control
+2. `test/PokemonTrading.test.js` - Fixed-price listings, auctions, swaps
+3. `test/DayCare.test.js` - Staking, levelling, stat boosts
+4. `test/EvolutionManager.test.js` - Evolution paths, burn-and-mint
+5. `test/PokemonMarketplace.test.ts` - Core marketplace (legacy)
+6. `test/PokemonMarketplace_Dutch.test.ts` - Dutch auction mechanics
+7. `test/PokemonMarketplace_CommitReveal.test.ts` - Commit-reveal security
+8. `test/PokemonMarketplace_CommitmentRecovery.test.ts` - Commitment cancellation
+9. `test/PokemonMarketplace_FeePause.test.ts` - Fees and emergency controls
+10. `test/PokemonNFT_Supply.test.ts` - Supply constraints
 
 ### Run Tests
 ```bash
@@ -157,23 +190,21 @@ cd frontend && npm start                               # Terminal 3
 ```
 
 ### Scripts
+- `scripts/deploy.js` - Deploy all contracts, register evolution paths, and mint full collection
 - `scripts/generate_metadata_with_pokeapi.ts` - Generate 100 Pokemon metadata with real PokeAPI images
-- `scripts/deploy_and_mint_all.ts` - Deploy contracts and mint full collection
 - `scripts/visual_demo.ts` - Interactive demo of marketplace features
 
 ## NFT Collection
 
 ### Collection Details
-100 Pokemon NFTs with official artwork from PokeAPI:
-- **5 Legendary** (rarity 5, tokens 0-4): Mewtwo, Lugia, Rayquaza, Arceus, Giratina
-- **25 Rare** (rarity 4, tokens 5-29): Charizard, Blastoise, Venusaur, Dragonite, etc.
-- **70 Common** (rarity 1-3, tokens 30-99): Pikachu, Bulbasaur, Charmander, Squirtle, etc.
+100 Pokemon NFTs with official artwork from PokeAPI, distributed across 10 Hardhat test accounts:
+- **Legendary**: Mewtwo, Lugia, Rayquaza, Arceus, Giratina
+- **Rare**: Charizard, Blastoise, Venusaur, Dragonite, etc.
+- **Common**: Pikachu, Bulbasaur, Charmander, Squirtle, etc.
 
-### Rarity Rules
-- **Legendary (Level 80-100):** Auction-only restriction
-- **Rare (Level 40-79):** Flexible sale options
-- **Common (Level 1-39):** Fixed-price preferred
-- Each Pokemon has unique attributes (name, type, level, Pokedex number)
+### Rarity System
+- Each Pokemon has string-based rarity: Common, Uncommon, Rare, Legendary
+- Unique attributes per Pokemon (name, type, HP, attack, defense, speed, generation)
 - Metadata stored on IPFS for decentralized access
 
 ### Live Examples
@@ -187,33 +218,17 @@ https://ipfs.io/ipfs/bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4
 https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png
 ```
 
-Both URLs are live and accessible!
-
-## Gas Optimization
-
-- **ERC721A** for batch minting (~60% gas savings vs ERC721)
-- **Pull payment pattern** prevents gas griefing
-- **Batch operations** for collection deployment
-- **Storage packing** in structs
-- **Custom errors** instead of require strings
-
 ## Security Considerations
 
 ### Implemented Protections
-✅ Reentrancy guards (OpenZeppelin)  
-✅ Integer overflow protection (Solidity 0.8+)  
-✅ Pull over push payments  
-✅ Checks-Effects-Interactions pattern  
-✅ Front-running mitigation (commit-reveal)  
-✅ Stale listing protection  
-✅ Emergency pause mechanism  
-✅ Access control (Ownable pattern)
-
-### Trade-offs
-- Commit-reveal adds ~85% gas overhead vs direct buy
-- Requires 2 transactions (commit + reveal)
-- 1-255 block time window for reveals
-- **Justified**: Security benefit outweighs UX cost for high-value NFTs
+- Reentrancy guards (OpenZeppelin ReentrancyGuard)
+- Integer overflow protection (Solidity 0.8+)
+- Pull over push payments
+- Checks-Effects-Interactions pattern
+- Front-running mitigation (commit-reveal on bids)
+- Emergency pause mechanism
+- Role-based access control (AccessControl / Ownable)
+- Custom errors for gas-efficient reverts
 
 ## Documentation
 
@@ -223,17 +238,16 @@ Both URLs are live and accessible!
 
 ## Coursework Compliance
 
-✅ **ERC721 Implementation** (ERC721A variant for gas efficiency)  
-✅ **Trading Contract** with multiple sale mechanisms  
-✅ **Front-Running Mitigation** (commit-reveal scheme)  
-✅ **Security Features** (reentrancy, access control, pausable)  
-✅ **Comprehensive Testing** (30 tests, 100% passing)  
-✅ **Gas Optimization** (ERC721A, pull payments, batch operations)  
-✅ **Documentation** (README, SECURITY.md, NatSpec comments)  
-✅ **IPFS Integration** (decentralized metadata storage)
+- **ERC721 Implementation** (OpenZeppelin ERC721 + ERC721Enumerable + ERC721URIStorage)
+- **Trading Contract** with multiple sale mechanisms (fixed-price, English auction, Dutch auction, swaps)
+- **Front-Running Mitigation** (commit-reveal scheme for auction bids)
+- **Security Features** (reentrancy guards, access control, pausable, pull payments)
+- **Comprehensive Testing** (141 tests across 10 files)
+- **Gas Optimization** (custom errors, pull payments, storage packing)
+- **Documentation** (README, SECURITY.md, NatSpec comments)
+- **IPFS Integration** (decentralized metadata storage)
+- **Additional Features** (DayCare staking, evolution, breeding/hatching)
 
 
-
-**Built with:** Solidity, Hardhat, OpenZeppelin, ERC721A, IPFS, PokeAPI  
-**Repository:** https://github.com/Spitfirator/DeFi-Coursework  
-**Branch:** rajat
+**Built with:** Solidity, Hardhat, OpenZeppelin, IPFS, PokeAPI
+**Repository:** https://github.com/Spitfirator/DeFi-Coursework
