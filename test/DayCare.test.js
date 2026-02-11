@@ -305,4 +305,41 @@ describe("DayCare", function () {
       expect((await dayCare.getStakedTokens(user1.address)).length).to.equal(0);
     });
   });
+
+  describe("Emergency Stop (Pausable)", function () {
+    it("Should pause and unpause", async function () {
+      const { dayCare, owner } = await loadFixture(deployDayCareFixture);
+
+      await dayCare.connect(owner).pause();
+      expect(await dayCare.paused()).to.be.true;
+
+      await dayCare.connect(owner).unpause();
+      expect(await dayCare.paused()).to.be.false;
+    });
+
+    it("Should prevent staking when paused", async function () {
+      const { pokemonCard, dayCare, owner, user1 } = await loadFixture(deployDayCareFixture);
+
+      await pokemonCard.connect(user1).setApprovalForAll(await dayCare.getAddress(), true);
+      await dayCare.connect(owner).pause();
+
+      await expect(dayCare.connect(user1).stake(0)).to.be.revertedWithCustomError(dayCare, "EnforcedPause");
+    });
+
+    it("Should prevent unstaking when paused", async function () {
+      const { pokemonCard, dayCare, owner, user1 } = await loadFixture(deployDayCareFixture);
+
+      await pokemonCard.connect(user1).setApprovalForAll(await dayCare.getAddress(), true);
+      await dayCare.connect(user1).stake(0);
+      await dayCare.connect(owner).pause();
+
+      await expect(dayCare.connect(user1).unstake(0)).to.be.revertedWithCustomError(dayCare, "EnforcedPause");
+    });
+
+    it("Should only allow owner to pause", async function () {
+      const { dayCare, user1 } = await loadFixture(deployDayCareFixture);
+
+      await expect(dayCare.connect(user1).pause()).to.be.revertedWithCustomError(dayCare, "OwnableUnauthorizedAccount");
+    });
+  });
 });

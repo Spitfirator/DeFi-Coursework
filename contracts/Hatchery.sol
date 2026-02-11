@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./PokemonCard.sol";
 
@@ -26,7 +27,10 @@ import "./PokemonCard.sol";
  *   from either parent, stats are the average of both parents +/- random
  *   variance, and generation is max(parent1, parent2) + 1.
  */
-contract Hatchery is AccessControl, ReentrancyGuard {
+contract Hatchery is AccessControl, Pausable, ReentrancyGuard {
+
+    // ============ Roles ============
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     // ============ State Variables ============
     PokemonCard public pokemonCard;
@@ -83,6 +87,8 @@ contract Hatchery is AccessControl, ReentrancyGuard {
         uint256 indexed eggTokenId,
         string name
     );
+    event EmergencyStop(address indexed by);
+    event EmergencyResume(address indexed by);
 
     // ============ Errors ============
     error NotTokenOwner();
@@ -111,6 +117,7 @@ contract Hatchery is AccessControl, ReentrancyGuard {
         eggTokenURI = _eggTokenURI;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
     }
 
     // ============ Breeding Functions ============
@@ -128,7 +135,7 @@ contract Hatchery is AccessControl, ReentrancyGuard {
     function breed(
         uint256 parent1Id,
         uint256 parent2Id
-    ) external nonReentrant returns (uint256) {
+    ) external nonReentrant whenNotPaused returns (uint256) {
         if (parent1Id == parent2Id) revert SameParent();
 
         // Verify caller owns both
@@ -207,7 +214,7 @@ contract Hatchery is AccessControl, ReentrancyGuard {
      * hatchDuration), then transfers both parent NFTs back and unlocks them.
      * @param sessionId The breeding session to mint an egg for
      */
-    function mintEgg(uint256 sessionId) external nonReentrant {
+    function mintEgg(uint256 sessionId) external nonReentrant whenNotPaused {
         BreedingSession storage session = sessions[sessionId];
         if (!session.active) revert SessionNotFound();
         if (session.originalOwner != msg.sender) revert NotSessionOwner();
@@ -242,7 +249,7 @@ contract Hatchery is AccessControl, ReentrancyGuard {
      * marks the session as hatched and inactive.
      * @param sessionId The breeding session to hatch
      */
-    function hatch(uint256 sessionId) external nonReentrant {
+    function hatch(uint256 sessionId) external nonReentrant whenNotPaused {
         BreedingSession storage session = sessions[sessionId];
         if (!session.active) revert SessionNotFound();
         if (!session.eggMinted) revert EggNotMinted();
@@ -361,6 +368,24 @@ contract Hatchery is AccessControl, ReentrancyGuard {
      */
     function setEggTokenURI(string memory _eggTokenURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
         eggTokenURI = _eggTokenURI;
+    }
+
+    // ============ Emergency Stop ============
+
+    /**
+     * @dev Emergency pause - stops all breeding operations
+     */
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+        emit EmergencyStop(msg.sender);
+    }
+
+    /**
+     * @dev Resume from emergency pause
+     */
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+        emit EmergencyResume(msg.sender);
     }
 
     // ============ Internal Functions ============

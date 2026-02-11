@@ -750,4 +750,132 @@ describe("PokemonTrading", function () {
       expect(listing.isActive).to.be.true;
     });
   });
+
+  describe("Dutch Auctions", function () {
+    const DUTCH_START_PRICE = ethers.parseEther("2");
+    const DUTCH_RESERVE_PRICE = ethers.parseEther("1");
+    const DUTCH_DURATION = 3600; // 1 hour
+
+    it("Should create a Dutch auction", async function () {
+      const { pokemonCard, trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      await expect(trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION))
+        .to.emit(trading, "DutchAuctionCreated")
+        .withArgs(0, seller.address, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      // NFT should be in escrow
+      expect(await pokemonCard.ownerOf(0)).to.equal(await trading.getAddress());
+    });
+
+    it("Should reject invalid price range (reserve >= starting)", async function () {
+      const { trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      await expect(
+        trading.connect(seller).createDutchAuction(0, ethers.parseEther("1"), ethers.parseEther("2"), DUTCH_DURATION)
+      ).to.be.revertedWithCustomError(trading, "InvalidPrice");
+    });
+
+    it("Should reject invalid duration", async function () {
+      const { trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      // Too short (< 1 hour)
+      await expect(
+        trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, 60)
+      ).to.be.revertedWithCustomError(trading, "InvalidDuration");
+    });
+
+    it("Should decrease price linearly over time", async function () {
+      const { trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      // At start, price should be starting price
+      const priceAtStart = await trading.getCurrentDutchPrice(0);
+      expect(priceAtStart).to.equal(DUTCH_START_PRICE);
+
+      // At halfway, price should be ~1.5 ETH
+      await time.increase(DUTCH_DURATION / 2);
+      const priceAtHalf = await trading.getCurrentDutchPrice(0);
+      const expectedHalf = ethers.parseEther("1.5");
+      // Allow small margin for block time
+      expect(priceAtHalf).to.be.closeTo(expectedHalf, ethers.parseEther("0.02"));
+
+      // At end, price should be reserve
+      await time.increase(DUTCH_DURATION / 2);
+      const priceAtEnd = await trading.getCurrentDutchPrice(0);
+      expect(priceAtEnd).to.equal(DUTCH_RESERVE_PRICE);
+    });
+
+    it("Should allow buying at current price", async function () {
+      const { pokemonCard, trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      // Advance halfway
+      await time.increase(DUTCH_DURATION / 2);
+
+      const currentPrice = await trading.getCurrentDutchPrice(0);
+
+      await expect(trading.connect(buyer).buyDutchAuction(0, { value: currentPrice + ethers.parseEther("0.1") }))
+        .to.emit(trading, "DutchAuctionPurchased");
+
+      // Buyer should own the NFT
+      expect(await pokemonCard.ownerOf(0)).to.equal(buyer.address);
+
+      // Seller should have pending withdrawal (minus fee)
+      const fee = (currentPrice * BigInt(PLATFORM_FEE)) / 10000n;
+      const expectedProceeds = currentPrice - fee;
+      expect(await trading.pendingWithdrawals(seller.address)).to.be.closeTo(expectedProceeds, ethers.parseEther("0.02"));
+    });
+
+    it("Should reject purchase after expiry", async function () {
+      const { trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      // Advance past duration
+      await time.increase(DUTCH_DURATION + 1);
+
+      await expect(
+        trading.connect(buyer).buyDutchAuction(0, { value: DUTCH_RESERVE_PRICE })
+      ).to.be.revertedWithCustomError(trading, "DutchAuctionExpired");
+    });
+
+    it("Should cancel Dutch auction and return NFT", async function () {
+      const { pokemonCard, trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      await expect(trading.connect(seller).cancelDutchAuction(0))
+        .to.emit(trading, "DutchAuctionCancelled");
+
+      // NFT returned to seller
+      expect(await pokemonCard.ownerOf(0)).to.equal(seller.address);
+    });
+
+    it("Should finalize expired Dutch auction", async function () {
+      const { pokemonCard, trading, seller, buyer } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      // Advance past duration
+      await time.increase(DUTCH_DURATION + 1);
+
+      await expect(trading.connect(buyer).finalizeDutchAuction(0))
+        .to.emit(trading, "DutchAuctionFinalized");
+
+      // NFT returned to seller
+      expect(await pokemonCard.ownerOf(0)).to.equal(seller.address);
+    });
+
+    it("Should prevent seller from buying own Dutch auction", async function () {
+      const { trading, seller } = await loadFixture(mintAndApproveFixture);
+
+      await trading.connect(seller).createDutchAuction(0, DUTCH_START_PRICE, DUTCH_RESERVE_PRICE, DUTCH_DURATION);
+
+      await expect(
+        trading.connect(seller).buyDutchAuction(0, { value: DUTCH_START_PRICE })
+      ).to.be.revertedWithCustomError(trading, "NotBuyer");
+    });
+  });
 });

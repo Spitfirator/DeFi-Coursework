@@ -53,8 +53,8 @@ All contracts are deployed via `scripts/deploy.js` to the Hardhat local network 
 
 ### Security Features
 - **Commit-Reveal Scheme** for front-running protection on auction bids
-- **Reentrancy Guards** on all state-changing functions
-- **Pausable** emergency stop mechanism
+- **Reentrancy Guards** on all state-changing functions across all 5 contracts
+- **Pausable** emergency stop mechanism on all 5 contracts
 - **Access Control** with role-based permissions (MINTER_ROLE, PAUSER_ROLE, TRAINER_ROLE)
 - **Pull Payment Pattern** prevents gas griefing
 - **Egg Trading Restrictions** prevent trading unhatched eggs on the marketplace
@@ -89,6 +89,7 @@ Staking contract for Pokemon levelling:
 - Level cap enforcement (max 100)
 - NFTs held in escrow via ERC721Holder
 - Checks-Effects-Interactions pattern throughout
+- Emergency pause mechanism
 
 ### EvolutionManager.sol
 Evolution system using burn-and-mint:
@@ -97,6 +98,7 @@ Evolution system using burn-and-mint:
 - Preserves owner, level, and generation
 - Preview function for frontend UI
 - 23 evolution paths registered at deploy (including 3-stage chains)
+- Emergency pause mechanism
 
 ### Hatchery.sol
 Breeding contract with 3-stage lifecycle:
@@ -105,6 +107,7 @@ Breeding contract with 3-stage lifecycle:
 - Stage 3 (hatch): After incubation timer, hatch egg with inherited genetics
 - Legendary breeding restriction
 - Pseudo-random genetics with parent stat averaging and variance
+- Emergency pause mechanism with PAUSER_ROLE
 
 ## Front-Running Mitigation
 
@@ -149,25 +152,21 @@ interface IPokemonCardStats {
 ## Testing
 
 ### Test Coverage
-- **141 tests** across 10 test files
-- Covers all 5 contracts
+- **125 tests** across 4 test files
+- Covers all 5 contracts (PokemonCard, PokemonTrading, DayCare, EvolutionManager, Hatchery)
 
 #### Test Files
-1. `test/PokemonCard.test.js` - NFT minting, metadata, access control
-2. `test/PokemonTrading.test.js` - Fixed-price listings, auctions, swaps
-3. `test/DayCare.test.js` - Staking, levelling, stat boosts
-4. `test/EvolutionManager.test.js` - Evolution paths, burn-and-mint
-5. `test/PokemonMarketplace.test.ts` - Core marketplace (legacy)
-6. `test/PokemonMarketplace_Dutch.test.ts` - Dutch auction mechanics
-7. `test/PokemonMarketplace_CommitReveal.test.ts` - Commit-reveal security
-8. `test/PokemonMarketplace_CommitmentRecovery.test.ts` - Commitment cancellation
-9. `test/PokemonMarketplace_FeePause.test.ts` - Fees and emergency controls
-10. `test/PokemonNFT_Supply.test.ts` - Supply constraints
+1. `test/PokemonCard.test.js` - NFT minting, metadata, access control, egg/hatch mechanics, emergency pause
+2. `test/PokemonTrading.test.js` - Fixed-price listings, English/Dutch auctions, commit-reveal security, NFT swaps, withdrawals, emergency pause
+3. `test/DayCare.test.js` - Staking, time-based levelling, stat boosts, emergency pause
+4. `test/EvolutionManager.test.js` - Evolution paths, burn-and-mint mechanics, stat persistence, emergency pause
 
 ### Run Tests
 ```bash
-npx hardhat test                    # All tests
+npx hardhat test                    # All tests (125 passing)
 npx hardhat test --grep "Commit"    # Security tests only
+npx hardhat test --grep "Dutch"     # Dutch auction tests only
+npx hardhat test --grep "Pausable"  # Emergency stop tests only
 ```
 
 ## Deployment
@@ -221,12 +220,12 @@ https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/o
 ## Security Considerations
 
 ### Implemented Protections
-- Reentrancy guards (OpenZeppelin ReentrancyGuard)
-- Integer overflow protection (Solidity 0.8+)
-- Pull over push payments
+- Reentrancy guards (OpenZeppelin ReentrancyGuard on all 5 contracts)
+- Integer overflow protection (Solidity 0.8.20)
+- Pull over push payments (secure withdrawal pattern)
 - Checks-Effects-Interactions pattern
-- Front-running mitigation (commit-reveal on bids)
-- Emergency pause mechanism
+- Front-running mitigation (commit-reveal scheme for auction bids)
+- Emergency pause mechanism (Pausable on all 5 contracts: PokemonCard, PokemonTrading, DayCare, EvolutionManager, Hatchery)
 - Role-based access control (AccessControl / Ownable)
 - Custom errors for gas-efficient reverts
 
@@ -236,16 +235,60 @@ https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/o
 - **Contract NatSpec** - Comprehensive inline documentation
 - **Test suite** - Living documentation of functionality
 
+## Contributors
+
+This project was developed as a pair programming effort for the DeFi Coursework assignment.
+
+### Individual Contributions
+
+**Hector**
+- Core smart contract architecture (PokemonCard, PokemonTrading) 
+- UI/frontend
+- Deployment infrastructure and scripts
+- Merged and applied IPFS integration for NFT metadata storage to work into main project
+- Security documentation
+- MetaMask rollback detection fix
+- Emergency pause implementation across all contracts
+- Testing
+
+**Rajat Durge**
+- Dutch auction implementation in PokemonTrading
+- ERC721A research
+- Landing page designer 
+- UI/frontend for implemented features
+- NFT swap feature (peer-to-peer token exchanges)
+- Shopping cart functionality in frontend
+- Implemented IPFS integration for NFT metadata storage
+- Frontend contributions
+- Testing
+
+**Jacob Jewitt**
+- Found the PokeAPI sprites GitHub library
+- Complete DayCare, EvolutionManager, Hatchery implementation and their UI/UX
+- DayCare staking contract
+- EvolutionManager contract
+- Hatchery breeding contract
+- Frontend components for auxiliary features
+- Code Cleanup
+- 
+- Testing
+
+### AI Tools Used
+- **Claude** - AI-assisted development for code generation, debugging, security analysis, and documentation
+- **Antigravity** - AI-assisted development
+
+Understanding of all project components and can explain any part of the codebase during evaluation.
+
 ## Coursework Compliance
 
 - **ERC721 Implementation** (OpenZeppelin ERC721 + ERC721Enumerable + ERC721URIStorage)
 - **Trading Contract** with multiple sale mechanisms (fixed-price, English auction, Dutch auction, swaps)
 - **Front-Running Mitigation** (commit-reveal scheme for auction bids)
-- **Security Features** (reentrancy guards, access control, pausable, pull payments)
-- **Comprehensive Testing** (141 tests across 10 files)
+- **Security Features** (reentrancy guards, access control, emergency pause on all 5 contracts, pull payments)
+- **Comprehensive Testing** (125 tests across 4 files covering all contracts)
 - **Gas Optimization** (custom errors, pull payments, storage packing)
-- **Documentation** (README, SECURITY.md, NatSpec comments)
-- **IPFS Integration** (decentralized metadata storage)
+- **Documentation** (README, SECURITY.md, NatSpec comments, individual contributions)
+- **IPFS Integration** (decentralized metadata storage with 100 Pokemon NFTs)
 - **Additional Features** (DayCare staking, evolution, breeding/hatching)
 
 

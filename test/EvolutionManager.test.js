@@ -258,4 +258,34 @@ describe("EvolutionManager", function () {
       ).to.be.revertedWithCustomError(evolution, "NoEvolutionPath");
     });
   });
+
+  describe("Emergency Stop (Pausable)", function () {
+    it("Should pause and unpause", async function () {
+      const { evolution, owner } = await loadFixture(deployEvolutionFixture);
+
+      await evolution.connect(owner).pause();
+      expect(await evolution.paused()).to.be.true;
+
+      await evolution.connect(owner).unpause();
+      expect(await evolution.paused()).to.be.false;
+    });
+
+    it("Should prevent evolution when paused", async function () {
+      const { pokemonCard, evolution, owner, user1 } = await loadFixture(deployEvolutionFixture);
+
+      // Level up Bulbasaur to meet threshold (32)
+      const TRAINER_ROLE = await pokemonCard.TRAINER_ROLE();
+      await pokemonCard.connect(owner).updateStats(0, 32, 45, 49, 49);
+
+      await evolution.connect(owner).pause();
+
+      await expect(evolution.connect(user1).evolve(0)).to.be.revertedWithCustomError(evolution, "EnforcedPause");
+    });
+
+    it("Should only allow owner to pause", async function () {
+      const { evolution, user1 } = await loadFixture(deployEvolutionFixture);
+
+      await expect(evolution.connect(user1).pause()).to.be.revertedWithCustomError(evolution, "OwnableUnauthorizedAccount");
+    });
+  });
 });

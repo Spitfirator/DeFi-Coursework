@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -52,7 +53,7 @@ interface IPokemonCardEvolution {
  * then burns the old NFT and mints a new one with the evolved stats.
  * The token ID changes but the owner, level, and generation are preserved.
  */
-contract EvolutionManager is Ownable, ReentrancyGuard {
+contract EvolutionManager is Ownable, Pausable, ReentrancyGuard {
     // ============ State Variables ============
     IPokemonCardEvolution public pokemonCard;
     string public baseTokenURI;
@@ -83,6 +84,8 @@ contract EvolutionManager is Ownable, ReentrancyGuard {
         address indexed owner
     );
     event BaseTokenURIUpdated(string oldURI, string newURI);
+    event EmergencyStop(address indexed by);
+    event EmergencyResume(address indexed by);
 
     // ============ Errors ============
     error NotTokenOwner();
@@ -161,7 +164,7 @@ contract EvolutionManager is Ownable, ReentrancyGuard {
      * @param tokenId The token ID of the Pokemon to evolve
      * @return The token ID of the newly minted evolved Pokemon
      */
-    function evolve(uint256 tokenId) external nonReentrant returns (uint256) {
+    function evolve(uint256 tokenId) external nonReentrant whenNotPaused returns (uint256) {
         // Verify ownership
         if (pokemonCard.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
 
@@ -212,6 +215,24 @@ contract EvolutionManager is Ownable, ReentrancyGuard {
             stats.level,
             stats.generation
         );
+    }
+
+    // ============ Emergency Stop ============
+
+    /**
+     * @dev Emergency pause - stops all evolution operations
+     */
+    function pause() external onlyOwner {
+        _pause();
+        emit EmergencyStop(msg.sender);
+    }
+
+    /**
+     * @dev Resume from emergency pause
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+        emit EmergencyResume(msg.sender);
     }
 
     // ============ View Functions ============

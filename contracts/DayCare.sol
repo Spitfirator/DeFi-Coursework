@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -56,7 +57,7 @@ interface IPokemonCard is IERC721 {
  * prevents them from being listed on the marketplace while staked.
  * Levels are capped at MAX_LEVEL (100).
  */
-contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
+contract DayCare is ERC721Holder, Ownable, Pausable, ReentrancyGuard {
     // ============ State Variables ============
     IPokemonCard public immutable pokemonCard;
     uint256 public levelInterval = 2; // seconds per level
@@ -80,6 +81,8 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
     event PokemonStaked(uint256 indexed tokenId, address indexed owner, uint256 timestamp);
     event PokemonUnstaked(uint256 indexed tokenId, address indexed owner, uint256 newLevel, uint256 levelsGained);
     event LevelIntervalUpdated(uint256 oldInterval, uint256 newInterval);
+    event EmergencyStop(address indexed by);
+    event EmergencyResume(address indexed by);
 
     // ============ Errors ============
     error NotTokenOwner();
@@ -103,7 +106,7 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
      * saves the current timestamp and level so levelling can be calculated on unstake.
      * @param tokenId The token ID to stake
      */
-    function stake(uint256 tokenId) external nonReentrant {
+    function stake(uint256 tokenId) external nonReentrant whenNotPaused {
         // Checks
         if (pokemonCard.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
         if (stakes[tokenId].owner != address(0)) revert TokenAlreadyStaked();
@@ -133,7 +136,7 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
      * cleans up all staking state.
      * @param tokenId The token ID to unstake
      */
-    function unstake(uint256 tokenId) external nonReentrant {
+    function unstake(uint256 tokenId) external nonReentrant whenNotPaused {
         StakeInfo memory info = stakes[tokenId];
         if (info.owner != msg.sender) revert TokenNotStaked();
 
@@ -232,6 +235,24 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
         uint256 oldInterval = levelInterval;
         levelInterval = newInterval;
         emit LevelIntervalUpdated(oldInterval, newInterval);
+    }
+
+    // ============ Emergency Stop ============
+
+    /**
+     * @dev Emergency pause - stops all staking operations
+     */
+    function pause() external onlyOwner {
+        _pause();
+        emit EmergencyStop(msg.sender);
+    }
+
+    /**
+     * @dev Resume from emergency pause
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+        emit EmergencyResume(msg.sender);
     }
 
     // ============ Internal Functions ============
