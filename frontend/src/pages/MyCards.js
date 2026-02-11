@@ -25,6 +25,12 @@ function MyCards() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingSwaps, setPendingSwaps] = useState([]);
   const lastLoadTime = useRef(0);
+
+  // Reset debounce when account changes so the first load isn't blocked
+  useEffect(() => {
+    lastLoadTime.current = 0;
+  }, [account]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRarity, setFilterRarity] = useState('all');
   const [filterType, setFilterType] = useState('all');
