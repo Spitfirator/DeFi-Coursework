@@ -48,7 +48,7 @@ interface IPokemonCard is IERC721 {
  * @dev Staking contract for Pokemon NFTs that rewards time-based levelling.
  *
  * Players deposit (stake) a Pokemon NFT into this contract. While staked,
- * the Pokemon earns 1 level per `levelInterval` seconds (default 60s).
+ * the Pokemon earns 1 level per `levelInterval` seconds (default 2s).
  * On unstaking the contract calculates levels gained, applies flat stat
  * boosts (+5 HP/ATK/DEF per level), updates the NFT on-chain via
  * PokemonCard.updateStats(), and returns the NFT to the player.

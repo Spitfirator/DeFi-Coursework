@@ -57,7 +57,7 @@ async function main() {
 
   const dayCareAddress = await dayCare.getAddress();
   console.log("✅ DayCare deployed to:", dayCareAddress);
-  console.log("  - Level Interval: 60 seconds");
+  console.log("  - Level Interval: 2 seconds");
   console.log();
 
   // Deploy EvolutionManager
@@ -255,7 +255,7 @@ async function main() {
     },
     dayCare: {
       address: dayCareAddress,
-      levelInterval: 60
+      levelInterval: 2
     },
     evolution: {
       address: evolutionAddress,
