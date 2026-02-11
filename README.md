@@ -51,7 +51,7 @@ All contracts are deployed via `scripts/deploy.js` to the Hardhat local network 
 - Generation tracking (max of parents + 1)
 - Legendary Pokemon cannot breed
 
-### Security Features
+### Security Features (check SECURITY.md for full details)
 - **Commit-Reveal Scheme** for front-running protection on auction bids
 - **Reentrancy Guards** on all state-changing functions across all 5 contracts
 - **Pausable** emergency stop mechanism on all 5 contracts
@@ -113,7 +113,7 @@ Breeding contract with 3-stage lifecycle:
 
 ### Why Commit-Reveal?
 
-The coursework requires front-running prevention for sensitive operations. We implemented a two-phase commit-reveal scheme for auction bids:
+We requires front-running prevention for sensitive operations. We implemented a two-phase commit-reveal scheme for auction bids:
 
 **Phase 1 - Commit**: Bidder hides their intent by submitting a hash
 ```javascript
@@ -152,18 +152,19 @@ interface IPokemonCardStats {
 ## Testing
 
 ### Test Coverage
-- **125 tests** across 4 test files
+- **163 tests** across 5 test files
 - Covers all 5 contracts (PokemonCard, PokemonTrading, DayCare, EvolutionManager, Hatchery)
 
 #### Test Files
-1. `test/PokemonCard.test.js` - NFT minting, metadata, access control, egg/hatch mechanics, emergency pause
-2. `test/PokemonTrading.test.js` - Fixed-price listings, English/Dutch auctions, commit-reveal security, NFT swaps, withdrawals, emergency pause
-3. `test/DayCare.test.js` - Staking, time-based levelling, stat boosts, emergency pause
-4. `test/EvolutionManager.test.js` - Evolution paths, burn-and-mint mechanics, stat persistence, emergency pause
+1. `test/PokemonCard.test.js` - 28 tests covering NFT minting, metadata, access control, egg/hatch mechanics, emergency pause
+2. `test/PokemonTrading.test.js` - 53 tests covering fixed-price listings, English/Dutch auctions, commit-reveal security, NFT swaps, withdrawals, emergency pause
+3. `test/DayCare.test.js` - 26 tests covering staking, time-based levelling, stat boosts, emergency pause
+4. `test/EvolutionManager.test.js` - 18 tests covering evolution paths, burn-and-mint mechanics, stat persistence, emergency pause
+5. `test/Hatchery.test.js` - 38 tests covering 3-stage breeding lifecycle, parent locking, egg minting/hatching, genetics inheritance, emergency pause
 
 ### Run Tests
 ```bash
-npx hardhat test                    # All tests (125 passing)
+npx hardhat test                    # All tests (163 passing)
 npx hardhat test --grep "Commit"    # Security tests only
 npx hardhat test --grep "Dutch"     # Dutch auction tests only
 npx hardhat test --grep "Pausable"  # Emergency stop tests only
@@ -235,13 +236,9 @@ https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/o
 - **Contract NatSpec** - Comprehensive inline documentation
 - **Test suite** - Living documentation of functionality
 
-## Contributors
+### Individual Contributions (can update as we go on)
 
-This project was developed as a pair programming effort for the DeFi Coursework assignment.
-
-### Individual Contributions
-
-**Hector**
+**Hector Gittos**
 - Core smart contract architecture (PokemonCard, PokemonTrading) 
 - UI/frontend
 - Deployment infrastructure and scripts
@@ -270,14 +267,11 @@ This project was developed as a pair programming effort for the DeFi Coursework 
 - Hatchery breeding contract
 - Frontend components for auxiliary features
 - Code Cleanup
-- 
 - Testing
 
 ### AI Tools Used
 - **Claude** - AI-assisted development for code generation, debugging, security analysis, and documentation
 - **Antigravity** - AI-assisted development
-
-Understanding of all project components and can explain any part of the codebase during evaluation.
 
 ## Coursework Compliance
 
@@ -285,12 +279,8 @@ Understanding of all project components and can explain any part of the codebase
 - **Trading Contract** with multiple sale mechanisms (fixed-price, English auction, Dutch auction, swaps)
 - **Front-Running Mitigation** (commit-reveal scheme for auction bids)
 - **Security Features** (reentrancy guards, access control, emergency pause on all 5 contracts, pull payments)
-- **Comprehensive Testing** (125 tests across 4 files covering all contracts)
+- **Comprehensive Testing** (163 tests across 5 files covering all 5 contracts)
 - **Gas Optimization** (custom errors, pull payments, storage packing)
 - **Documentation** (README, SECURITY.md, NatSpec comments, individual contributions)
 - **IPFS Integration** (decentralized metadata storage with 100 Pokemon NFTs)
 - **Additional Features** (DayCare staking, evolution, breeding/hatching)
-
-
-**Built with:** Solidity, Hardhat, OpenZeppelin, IPFS, PokeAPI
-**Repository:** https://github.com/Spitfirator/DeFi-Coursework

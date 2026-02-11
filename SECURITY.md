@@ -1,9 +1,9 @@
 # Pokemon NFT Marketplace - Security Documentation
 
-## Front-Running Mitigation (Coursework Requirement)
+## Front-Running Mitigation 
 
 ### Problem Statement
-The coursework explicitly requires front-running mitigation for sensitive operations. In our marketplace, the following functions are vulnerable to front-running attacks:
+We requires front-running mitigation for sensitive operations. In our marketplace, the following functions are vulnerable to front-running attacks:
 
 1. **`buyCard()`** - A malicious actor can observe a pending buy transaction and front-run it with a higher gas price
 2. **`buyDutchAuction()`** - Snipers can copy buy transactions at optimal prices
@@ -144,19 +144,15 @@ Platform fees are tracked separately via `accumulatedFees` and can only be withd
 
 ## Testing
 
-Comprehensive test suite covering commit-reveal security:
+Comprehensive test suite covering all 5 contracts:
 
-- `test/PokemonMarketplace_CommitReveal.test.ts` - 11 tests covering commit-reveal flows
-- `test/PokemonMarketplace_CommitmentRecovery.test.ts` - 7 tests covering commitment edge cases
-- `test/PokemonMarketplace_FeePause.test.ts` - 4 tests covering fees and emergency controls
+- `test/PokemonCard.test.js` - 28 tests for NFT minting, metadata, access control, egg/hatch mechanics, emergency pause
+- `test/PokemonTrading.test.js` - 53 tests for fixed-price listings, English/Dutch auctions, commit-reveal security, NFT swaps, withdrawals, emergency pause
+- `test/DayCare.test.js` - 26 tests for staking, time-based levelling, stat boosts, emergency pause
+- `test/EvolutionManager.test.js` - 18 tests for evolution paths, burn-and-mint mechanics, stat persistence, emergency pause
+- `test/Hatchery.test.js` - 38 tests for 3-stage breeding lifecycle, parent locking, egg minting/hatching, genetics inheritance, emergency pause
 
-Additional test coverage across all contracts:
-- `test/PokemonCard.test.js` - 28 tests for NFT minting and access control
-- `test/PokemonTrading.test.js` - 44 tests for marketplace operations
-- `test/DayCare.test.js` - 22 tests for staking and levelling
-- `test/EvolutionManager.test.js` - 15 tests for evolution mechanics
-
-**141 total tests** across 10 test files.
+**163 total tests** across 5 test files.
 
 ## Design Decisions
 
@@ -186,6 +182,3 @@ interface IPokemonCardStats {
 - Loose coupling via interface rather than direct import
 - Only reads data, never modifies NFT state
 
-## Conclusion
-
-This implementation addresses the coursework requirement for front-running mitigation while maintaining usability and adding additional security improvements. The commit-reveal scheme is a well-established cryptographic pattern used in production DeFi protocols like ENS (Ethereum Name Service) for the same purpose.
