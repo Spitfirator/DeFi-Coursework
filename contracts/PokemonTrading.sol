@@ -126,6 +126,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         uint256 duration
     );
     event DutchAuctionPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
+    event DutchAuctionFinalized(uint256 indexed tokenId, address indexed seller);
     event DutchAuctionCancelled(uint256 indexed tokenId, address indexed seller);
     
     event SwapRequestCreated(uint256 indexed desiredTokenId, address indexed requester, uint256 offeredTokenId);
@@ -140,6 +141,7 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     // ============ Errors ============
     error NotTokenOwner();
     error NotSeller();
+    error NotBuyer();
     error ListingNotActive();
     error AuctionNotActive();
     error AuctionStillActive();
@@ -687,10 +689,12 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
      */
     function buyDutchAuction(uint256 tokenId) external payable whenNotPaused nonReentrant {
         DutchAuction storage auction = dutchAuctions[tokenId];
-        
+
         if (!auction.isActive) revert DutchAuctionNotActive();
         if (auction.sold) revert DutchAuctionNotActive();
-        
+        if (block.timestamp >= auction.startTime + auction.duration) revert DutchAuctionExpired();
+        if (auction.seller == msg.sender) revert NotBuyer();
+
         uint256 currentPrice = getCurrentDutchPrice(tokenId);
         if (msg.value < currentPrice) revert InsufficientPayment();
 
@@ -716,6 +720,26 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         }
 
         emit DutchAuctionPurchased(tokenId, msg.sender, currentPrice);
+    }
+
+    /**
+     * @dev Finalize an expired Dutch auction, returning the NFT to the seller.
+     * Anyone can call this once the duration has elapsed.
+     * @param tokenId Token ID to finalize
+     */
+    function finalizeDutchAuction(uint256 tokenId) external nonReentrant {
+        DutchAuction storage auction = dutchAuctions[tokenId];
+
+        if (!auction.isActive) revert DutchAuctionNotActive();
+        if (auction.sold) revert DutchAuctionNotActive();
+        if (block.timestamp < auction.startTime + auction.duration) revert AuctionStillActive();
+
+        auction.isActive = false;
+
+        // Return NFT to seller
+        pokemonContract.transferFrom(address(this), auction.seller, tokenId);
+
+        emit DutchAuctionFinalized(tokenId, auction.seller);
     }
 
     /**

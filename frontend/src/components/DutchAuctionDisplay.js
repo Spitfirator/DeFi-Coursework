@@ -3,7 +3,7 @@ import { TrendingDown, Clock, DollarSign, ShoppingCart } from 'lucide-react';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
 
-function DutchAuctionDisplay({ auction, tokenId, tradingContract, onPurchase }) {
+function DutchAuctionDisplay({ auction, tokenId, tradingContract, account, onPurchase }) {
     const [currentPrice, setCurrentPrice] = useState('0');
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [isPurchasing, setIsPurchasing] = useState(false);
@@ -122,15 +122,17 @@ function DutchAuctionDisplay({ auction, tokenId, tradingContract, onPurchase }) 
                 </p>
             </div>
 
-            {/* Buy Button */}
-            <button
-                onClick={handleBuy}
-                disabled={isPurchasing || timeRemaining <= 0}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2"
-            >
-                <ShoppingCart className="w-5 h-5" />
-                {isPurchasing ? 'Purchasing...' : timeRemaining <= 0 ? 'Auction Ended' : 'Buy Now'}
-            </button>
+            {/* Buy Button - hidden for the seller */}
+            {account?.toLowerCase() !== auction.seller?.toLowerCase() && (
+              <button
+                  onClick={handleBuy}
+                  disabled={isPurchasing || timeRemaining <= 0}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2"
+              >
+                  <ShoppingCart className="w-5 h-5" />
+                  {isPurchasing ? 'Purchasing...' : timeRemaining <= 0 ? 'Auction Ended' : 'Buy Now'}
+              </button>
+            )}
 
             {timeRemaining <= 0 && (
                 <p className="text-center text-sm text-gray-400">

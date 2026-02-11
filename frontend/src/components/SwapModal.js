@@ -23,13 +23,14 @@ const SwapModal = ({ isOpen, onClose, desiredCard }) => {
 
             // We need to fetch ALL cards (in wallet + listed/auctioned)
             // Iterate totalMinted like MyCards.js to find everything
-            const totalMinted = await pokemonContract.totalMinted();
+            const total = Number(await pokemonContract.totalSupply());
             const cards = [];
 
-            for (let i = 0; i < Number(totalMinted); i++) {
+            for (let i = 0; i < total; i++) {
                 try {
+                    const tokenId = Number(await pokemonContract.tokenByIndex(i));
                     // Check ownership or seller status
-                    const owner = await pokemonContract.ownerOf(i);
+                    const owner = await pokemonContract.ownerOf(tokenId);
                     const isWalletOwner = owner.toLowerCase() === account.toLowerCase();
 
                     let isMyListing = false;
@@ -38,15 +39,15 @@ const SwapModal = ({ isOpen, onClose, desiredCard }) => {
 
                     if (!isWalletOwner) {
                         // Check if it's my listing (in escrow)
-                        const listing = await tradingContract.listings(i);
+                        const listing = await tradingContract.listings(tokenId);
                         if (listing.isActive && listing.seller.toLowerCase() === account.toLowerCase()) {
                             isMyListing = true;
                         } else {
-                            const auction = await tradingContract.auctions(i);
+                            const auction = await tradingContract.auctions(tokenId);
                             if (auction.isActive && auction.seller.toLowerCase() === account.toLowerCase()) {
                                 isMyAuction = true;
                             } else {
-                                const dutch = await tradingContract.dutchAuctions(i);
+                                const dutch = await tradingContract.dutchAuctions(tokenId);
                                 if (dutch.isActive && dutch.seller.toLowerCase() === account.toLowerCase()) {
                                     isMyDutch = true;
                                 }
@@ -57,10 +58,10 @@ const SwapModal = ({ isOpen, onClose, desiredCard }) => {
                     // If I own it OR I'm the seller (it's in escrow)
                     if (isWalletOwner || isMyListing || isMyAuction || isMyDutch) {
                         // Don't show the card we want to swap for
-                        if (i.toString() !== desiredCard.tokenId.toString()) {
-                            const cardStats = await pokemonContract.getPokemonStats(i);
+                        if (tokenId.toString() !== desiredCard.tokenId.toString()) {
+                            const cardStats = await pokemonContract.getPokemonStats(tokenId);
                             cards.push({
-                                tokenId: i.toString(),
+                                tokenId: tokenId.toString(),
                                 name: cardStats.name,
                                 pokemonType: cardStats.pokemonType,
                                 rarity: cardStats.rarity,

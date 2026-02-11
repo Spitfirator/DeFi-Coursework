@@ -7,27 +7,47 @@ import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
 
 const typeColors = {
-  Electric: { bg: 'from-yellow-400 to-yellow-600', icon: Zap },
-  Fire: { bg: 'from-orange-500 to-red-600', icon: Flame },
-  Water: { bg: 'from-blue-400 to-blue-600', icon: Droplet },
-  Grass: { bg: 'from-green-400 to-green-600', icon: Leaf },
-  Psychic: { bg: 'from-pink-400 to-purple-600', icon: Brain },
-  Ghost: { bg: 'from-purple-500 to-purple-800', icon: Ghost },
-  Rock: { bg: 'from-yellow-700 to-yellow-900', icon: Mountain },
-  Bug: { bg: 'from-lime-400 to-green-600', icon: Bug },
-  Normal: { bg: 'from-gray-400 to-gray-600', icon: Star },
+  Normal:   { from: '#A8A77A', to: '#ACAD99', icon: Star },
+  Fire:     { from: '#EE8130', to: '#E87A3D', icon: Flame },
+  Water:    { from: '#6390F0', to: '#639CE4', icon: Droplet },
+  Electric: { from: '#F7D02C', to: '#E7C536', icon: Zap },
+  Grass:    { from: '#7AC74C', to: '#82C95B', icon: Leaf },
+  Ice:      { from: '#96D9D6', to: '#81CFD7', icon: Droplet },
+  Fighting: { from: '#C22E28', to: '#C45D4C', icon: Zap },
+  Poison:   { from: '#A33EA1', to: '#B369AF', icon: Bug },
+  Ground:   { from: '#E2BF65', to: '#CEB250', icon: Mountain },
+  Flying:   { from: '#A98FF3', to: '#90AAD7', icon: Leaf },
+  Psychic:  { from: '#F95587', to: '#E96C95', icon: Brain },
+  Bug:      { from: '#A6B91A', to: '#ACC23E', icon: Bug },
+  Rock:     { from: '#B6A136', to: '#BAA85E', icon: Mountain },
+  Ghost:    { from: '#735797', to: '#816DB6', icon: Ghost },
+  Dragon:   { from: '#6F35FC', to: '#8572C8', icon: Flame },
+  Dark:     { from: '#705746', to: '#79726B', icon: Ghost },
+  Steel:    { from: '#B7B7CE', to: '#9FA9AF', icon: Star },
+  Fairy:    { from: '#D685AD', to: '#E8B0EB', icon: Star },
 };
 
 // Pokemon name to Pokedex ID mapping for PokeAPI sprites
 const pokemonToPokedexId = {
+  // Legendaries
   'Mewtwo': 150, 'Lugia': 249, 'Rayquaza': 384, 'Arceus': 493, 'Giratina': 487,
+  // Fully evolved (in collection)
   'Charizard': 6, 'Blastoise': 9, 'Venusaur': 3, 'Gengar': 94, 'Dragonite': 149,
   'Gyarados': 130, 'Alakazam': 65, 'Machamp': 68, 'Snorlax': 143, 'Arcanine': 59,
   'Lapras': 131, 'Tyranitar': 248, 'Metagross': 376, 'Salamence': 373, 'Garchomp': 445,
+  // Base forms (in collection)
   'Pikachu': 25, 'Bulbasaur': 1, 'Charmander': 4, 'Squirtle': 7, 'Pidgey': 16,
   'Rattata': 19, 'Zubat': 41, 'Geodude': 74, 'Magikarp': 129, 'Caterpie': 10,
   'Eevee': 133, 'Jigglypuff': 39, 'Psyduck': 54, 'Growlithe': 58, 'Oddish': 43,
-  'Raichu': 26, 'Jolteon': 135
+  // Evolved forms (from evolution chains)
+  'Raichu': 26, 'Jolteon': 135,
+  'Ivysaur': 2, 'Charmeleon': 5, 'Wartortle': 8,
+  'Metapod': 11, 'Butterfree': 12,
+  'Pidgeotto': 17, 'Pidgeot': 18,
+  'Raticate': 20, 'Golduck': 55, 'Wigglytuff': 40,
+  'Golbat': 42, 'Crobat': 169,
+  'Gloom': 44, 'Vileplume': 45,
+  'Graveler': 75, 'Golem': 76,
 };
 
 // Get Pokemon image URL from PokeAPI sprites
@@ -46,7 +66,7 @@ const rarityStyles = {
   Legendary: 'border-yellow-500 shadow-yellow-500/20 shadow-lg',
 };
 
-function PokemonCard({ pokemon, listing, auction, dutchAuction, showActions = false, isHot = false, compactCart = false, showBuyOnly = false }) {
+function PokemonCard({ pokemon, listing, auction, dutchAuction, showActions = false, isHot = false, compactCart = false, showBuyOnly = false, disableNavigation = false, disableHoverScale = false }) {
   const { tokenId, name, pokemonType, rarity, hp, attack, defense, speed, level, isEgg } = pokemon;
   const typeConfig = typeColors[pokemonType] || typeColors.Normal;
   const TypeIcon = typeConfig.icon;
@@ -85,15 +105,14 @@ function PokemonCard({ pokemon, listing, auction, dutchAuction, showActions = fa
   }
 
   const handleCardClick = (e) => {
-    // Only navigate if checking details or clicking card body
-    // Prevent if clicking specific buttons that handle their own logic
+    if (disableNavigation) return;
     navigate(`/card/${tokenId}`);
   };
 
   return (
     <div
       onClick={handleCardClick}
-      className={`relative bg-gray-900 rounded-xl overflow-hidden border-2 ${rarityStyles[rarity] || 'border-gray-700'} hover:scale-105 transition-transform duration-300 cursor-pointer group`}
+      className={`relative isolate bg-gray-900 rounded-xl overflow-hidden border-2 ${rarityStyles[rarity] || 'border-gray-700'} ${disableHoverScale ? '' : 'hover:scale-105'} transition-transform duration-300 cursor-pointer group`}
     >
       {/* Popular Badge */}
       {isHot && (
@@ -116,7 +135,7 @@ function PokemonCard({ pokemon, listing, auction, dutchAuction, showActions = fa
       </div>
 
       {/* Card Image - Uses PokeAPI official artwork (same as IPFS metadata) */}
-      <div className={`h-48 bg-gradient-to-br ${typeConfig.bg} flex items-center justify-center relative overflow-hidden`}>
+      <div className="h-48 flex items-center justify-center relative overflow-hidden" style={{ background: `linear-gradient(to bottom, ${typeConfig.from} 0%, ${typeConfig.to} 50%, #111827 100%)` }}>
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}
@@ -144,7 +163,7 @@ function PokemonCard({ pokemon, listing, auction, dutchAuction, showActions = fa
         </div>
 
         <div className="flex items-center justify-between mb-3">
-          <span className={`px-2 py-1 text-xs rounded bg-gradient-to-r ${typeConfig.bg}`}>
+          <span className="px-2 py-1 text-xs rounded text-white" style={{ background: `linear-gradient(to right, ${typeConfig.from}, ${typeConfig.to})` }}>
             {pokemonType}
           </span>
           {level !== undefined && (

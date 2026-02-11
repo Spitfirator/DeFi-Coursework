@@ -4,7 +4,7 @@ import { useWeb3 } from '../context/Web3Context';
 import PokemonCard from '../components/PokemonCard';
 import DutchAuctionModal from '../components/DutchAuctionModal';
 import { ethers } from 'ethers';
-import { Loader, AlertCircle, Plus, Tag, Gavel, X, DollarSign, TrendingDown, ArrowLeftRight, Check, XCircle } from 'lucide-react';
+import { Loader, AlertCircle, Plus, Tag, Gavel, X, DollarSign, TrendingDown, ArrowLeftRight, Check, XCircle, Search, Star, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function MyCards() {
@@ -24,25 +24,26 @@ function MyCards() {
   const [pendingWithdrawal, setPendingWithdrawal] = useState('0');
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingSwaps, setPendingSwaps] = useState([]);
-  const [loadingSwaps, setLoadingSwaps] = useState(false);
   const lastLoadTime = useRef(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRarity, setFilterRarity] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [showListings, setShowListings] = useState(true);
+  const [showCollection, setShowCollection] = useState(true);
 
   const loadMyCards = useCallback(async () => {
     const now = Date.now();
     // Prevent double-refresh: if called within 2 seconds of last start, skip
-    if (now - lastLoadTime.current < 2000) {
-      console.log('Skipping duplicate refresh (debounced)');
-      return;
-    }
+    if (now - lastLoadTime.current < 2000) return;
 
     if (!pokemonContract || !account || !tradingContract) return;
 
     try {
       lastLoadTime.current = now;
       setLoading(true);
-      console.log('Loading cards...');
       const cards = [];
-      const processedTokenIds = new Set(); // To avoid duplicates if any overlap
+      const processedTokenIds = new Set();
 
       const fetchCardDetails = async (tokenId) => {
         if (processedTokenIds.has(Number(tokenId))) return null;
@@ -120,23 +121,22 @@ function MyCards() {
         if (card) cards.push(card);
       }
 
-      // 2. Fetch Listed Cards (Iterate Total Minted)
+      // 2. Fetch Listed Cards (Iterate living tokens via ERC721Enumerable)
       // This ensures cards listed by the user (now owned by contract) appear in 'My Cards'
-      const totalMinted = await pokemonContract.totalMinted();
-      for (let i = 0; i < Number(totalMinted); i++) {
-        // Optimization: Create simplified checks or just fetch all active listings first?
-        // For simplicity in this demo, we check listings directly.
+      const total = Number(await pokemonContract.totalSupply());
+      for (let i = 0; i < total; i++) {
         try {
-          const l = await tradingContract.listings(i);
-          const a = await tradingContract.auctions(i);
-          const d = await tradingContract.dutchAuctions(i);
+          const tokenId = Number(await pokemonContract.tokenByIndex(i));
+          const l = await tradingContract.listings(tokenId);
+          const a = await tradingContract.auctions(tokenId);
+          const d = await tradingContract.dutchAuctions(tokenId);
 
           const isMyListing = (l.isActive && l.seller.toLowerCase() === account.toLowerCase());
           const isMyAuction = (a.isActive && a.seller.toLowerCase() === account.toLowerCase());
           const isMyDutch = (d.isActive && !d.sold && d.seller.toLowerCase() === account.toLowerCase());
 
           if (isMyListing || isMyAuction || isMyDutch) {
-            const card = await fetchCardDetails(i);
+            const card = await fetchCardDetails(tokenId);
             if (card) cards.push(card);
           }
         } catch (e) {
@@ -146,11 +146,8 @@ function MyCards() {
 
       setMyCards(cards);
 
-      // Load pending withdrawal
-      if (tradingContract) {
-        const pending = await tradingContract.getPendingWithdrawal(account);
-        setPendingWithdrawal(ethers.formatEther(pending));
-      }
+      const pending = await tradingContract.getPendingWithdrawal(account);
+      setPendingWithdrawal(ethers.formatEther(pending));
     } catch (error) {
       console.error('Failed to load cards:', error);
       toast.error('Failed to load your cards');
@@ -166,7 +163,6 @@ function MyCards() {
     }
 
     try {
-      setLoadingSwaps(true);
       const allSwaps = [];
 
       // Check each owned NFT for swap requests
@@ -204,8 +200,6 @@ function MyCards() {
       setPendingSwaps(allSwaps);
     } catch (error) {
       console.error('Failed to load pending swaps:', error);
-    } finally {
-      setLoadingSwaps(false);
     }
   }, [pokemonContract, tradingContract, account, myCards]);
 
@@ -222,13 +216,7 @@ function MyCards() {
     if (!tradingContract || !pokemonContract) return;
 
     const handleTransfer = () => loadMyCards();
-    const handleListed = () => loadMyCards();
-    const handleListingCancelled = () => loadMyCards();
     const handleSale = () => loadMyCards();
-    const handleAuctionCreated = () => loadMyCards();
-    const handleAuctionCancelled = () => loadMyCards();
-    const handleAuctionFinalized = () => loadMyCards();
-    const handleWithdrawal = () => loadMyCards();
 
     pokemonContract.on('Transfer', handleTransfer);
     tradingContract.on('Sale', handleSale);
@@ -246,17 +234,7 @@ function MyCards() {
       setIsProcessing(true);
       const priceWei = ethers.parseEther(listPrice);
 
-      console.log('Listing card:', {
-        tokenId: selectedCard.tokenId,
-        price: listPrice,
-        priceWei: priceWei.toString(),
-        account,
-        tradingContractAddress: await tradingContract.getAddress()
-      });
-
-      // Check if user owns the NFT
       const owner = await pokemonContract.ownerOf(selectedCard.tokenId);
-      console.log('NFT owner:', owner, 'Current account:', account);
 
       if (owner.toLowerCase() !== account.toLowerCase()) {
         toast.error('You do not own this NFT');
@@ -265,7 +243,6 @@ function MyCards() {
 
       // Check if already listed
       const listing = await tradingContract.listings(selectedCard.tokenId);
-      console.log('Existing listing:', listing);
       if (listing.isActive) {
         toast.error('This NFT is already listed for sale');
         return;
@@ -273,7 +250,6 @@ function MyCards() {
 
       // Check if in auction
       const auction = await tradingContract.auctions(selectedCard.tokenId);
-      console.log('Existing auction:', auction);
       if (auction.isActive) {
         toast.error('This NFT is currently in an auction');
         return;
@@ -286,15 +262,12 @@ function MyCards() {
         tradingAddress
       );
 
-      console.log('Is approved:', isApproved);
-
       if (!isApproved) {
         toast.loading('Approving contract...');
         const approveTx = await pokemonContract.setApprovalForAll(
           tradingAddress,
           true
         );
-        console.log('Approval tx:', approveTx.hash);
         await approveTx.wait();
         toast.dismiss();
         toast.success('Contract approved!');
@@ -302,7 +275,6 @@ function MyCards() {
 
       toast.loading('Listing card...');
       const tx = await tradingContract.listCard(selectedCard.tokenId, priceWei);
-      console.log('List tx:', tx.hash);
       await tx.wait();
 
       toast.dismiss();
@@ -312,15 +284,6 @@ function MyCards() {
       triggerRefresh();
     } catch (error) {
       toast.dismiss();
-      console.error('Failed to list card:', error);
-      console.error('Error details:', {
-        message: error.message,
-        reason: error.reason,
-        code: error.code,
-        data: error.data
-      });
-
-      // Better error messages
       let errorMessage = 'Failed to list card';
       if (error.reason) {
         errorMessage = error.reason;
@@ -362,7 +325,6 @@ function MyCards() {
       await loadMyCards();
       await loadPendingSwaps();
     } catch (error) {
-      console.error('Error accepting swap:', error);
       toast.dismiss();
       toast.error(error.reason || 'Failed to execute swap');
     } finally {
@@ -384,7 +346,6 @@ function MyCards() {
       // Reload swaps
       await loadPendingSwaps();
     } catch (error) {
-      console.error('Error rejecting swap:', error);
       toast.dismiss();
       toast.error(error.reason || 'Failed to reject swap');
     } finally {
@@ -439,7 +400,6 @@ function MyCards() {
       triggerRefresh();
     } catch (error) {
       toast.dismiss();
-      console.error('Failed to create auction:', error);
       toast.error(error.reason || 'Failed to create auction');
     } finally {
       setIsProcessing(false);
@@ -458,7 +418,6 @@ function MyCards() {
       triggerRefresh();
     } catch (error) {
       toast.dismiss();
-      console.error('Failed to withdraw:', error);
       toast.error(error.reason || 'Failed to withdraw');
     } finally {
       setIsProcessing(false);
@@ -506,7 +465,7 @@ function MyCards() {
           <p className="text-gray-400 mb-4">People want to trade with you!</p>
 
           <div className="space-y-4">
-            {pendingSwaps.map((swap, index) => (
+            {pendingSwaps.map((swap) => (
               <div
                 key={`${swap.desiredTokenId}-${swap.requestIndex}`}
                 className="bg-gray-900/50 rounded-lg p-4 border border-gray-800 hover:border-purple-500/50 transition-colors"
@@ -567,90 +526,256 @@ function MyCards() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader className="animate-spin text-primary" size={48} />
-        </div>
-      ) : myCards.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {myCards.map((card) => (
-            <div key={card.tokenId} className="relative group">
-              <Link to={`/card/${card.tokenId}`} className="block">
-                <PokemonCard
-                  pokemon={card}
-                  listing={card.listing}
-                  auction={card.auction}
-                  dutchAuction={card.dutchAuction}
-                />
-              </Link>
-
-              {/* Action Overlay */}
-              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl p-2 h-full pointer-events-none">
-                <div className="flex items-center space-x-2 pointer-events-auto">
-                  {!card.listing && !card.auction && !card.dutchAuction ? (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedCard(card);
-                          setShowAuctionModal(false);
-                          setShowDutchAuctionModal(false);
-                          setShowListModal(true);
-                        }}
-                        className="flex items-center space-x-1 px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors text-sm"
-                      >
-                        <Tag size={16} />
-                        <span>List</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedCard(card);
-                          setShowListModal(false);
-                          setShowDutchAuctionModal(false);
-                          setShowAuctionModal(true);
-                        }}
-                        className="flex items-center space-x-1 px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors text-sm"
-                      >
-                        <Gavel size={16} />
-                        <span>Auction</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedCard(card);
-                          setShowListModal(false);
-                          setShowAuctionModal(false);
-                          setShowDutchAuctionModal(true);
-                        }}
-                        className="flex items-center space-x-1 px-3 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                      >
-                        <TrendingDown size={16} />
-                        <span>Dutch</span>
-                      </button>
-                    </>
-                  ) : (
-                    <Link
-                      to={`/card/${card.tokenId}`}
-                      className="flex items-center space-x-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-white font-semibold"
-                    >
-                      <span>View Details</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-20">
-          <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus size={32} className="text-gray-500" />
+      {/* Filter Bar */}
+      {!loading && myCards.length > 0 && (
+        <div className="mb-6 bg-gray-900/60 backdrop-blur-sm border border-gray-800/60 rounded-xl p-4 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search your cards..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 text-gray-100 rounded-lg focus:outline-none focus:border-primary transition-all placeholder-gray-500 text-sm"
+            />
           </div>
-          <h2 className="text-xl font-semibold mb-2">No Cards Yet</h2>
-          <p className="text-gray-400 mb-4">Start your collection by buying from the marketplace</p>
+
+          {/* Pill Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 w-14 flex-shrink-0">Status</span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'unlisted', label: 'Unlisted' },
+              { id: 'listed', label: 'Listed' },
+              { id: 'auction', label: 'Auction' }
+            ].map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => setFilterStatus(opt.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterStatus === opt.id
+                  ? 'bg-primary/15 text-primary border-primary/40'
+                  : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 w-14 flex-shrink-0">Rarity</span>
+            {['Common', 'Uncommon', 'Rare', 'Legendary'].map(r => (
+              <button
+                key={r}
+                onClick={() => setFilterRarity(filterRarity === r ? 'all' : r)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterRarity === r
+                  ? 'bg-primary/15 text-primary border-primary/40'
+                  : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 w-14 flex-shrink-0">Type</span>
+            {['Normal', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ghost', 'Rock', 'Bug', 'Dragon', 'Fighting', 'Poison', 'Flying', 'Ground', 'Dark', 'Steel', 'Ice', 'Fairy'].map(t => (
+              <button
+                key={t}
+                onClick={() => setFilterType(filterType === t ? 'all' : t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterType === t
+                  ? 'bg-primary/15 text-primary border-primary/40'
+                  : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
       )}
+
+      {(() => {
+        const filteredCards = myCards.filter(card => {
+          if (card.isEgg) return false;
+          const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesRarity = filterRarity === 'all' || card.rarity === filterRarity;
+          const matchesType = filterType === 'all' || card.pokemonType.includes(filterType);
+          let matchesStatus = true;
+          if (filterStatus === 'unlisted') matchesStatus = !card.listing && !card.auction && !card.dutchAuction;
+          else if (filterStatus === 'listed') matchesStatus = !!card.listing;
+          else if (filterStatus === 'auction') matchesStatus = !!card.auction || !!card.dutchAuction;
+          return matchesSearch && matchesRarity && matchesType && matchesStatus;
+        });
+
+        const listedCards = filteredCards.filter(c => c.listing || c.auction || c.dutchAuction);
+        const unlistedCards = filteredCards.filter(c => !c.listing && !c.auction && !c.dutchAuction);
+
+        const getListingLabel = (card) => {
+          if (card.listing) return { text: 'Fixed Price', color: 'text-green-400 bg-green-500/15 border-green-500/30', price: `${card.listing.price} ETH` };
+          if (card.auction) return { text: 'Auction', color: 'text-orange-400 bg-orange-500/15 border-orange-500/30', price: card.auction.highestBid > 0 ? `${card.auction.highestBid} ETH` : 'No bids' };
+          if (card.dutchAuction) return { text: 'Dutch Auction', color: 'text-purple-400 bg-purple-500/15 border-purple-500/30', price: `${card.dutchAuction.startingPrice} → ${card.dutchAuction.reservePrice} ETH` };
+          return null;
+        };
+
+        if (loading) return (
+          <div className="flex items-center justify-center py-20">
+            <Loader className="animate-spin text-primary" size={48} />
+          </div>
+        );
+
+        if (myCards.length === 0) return (
+          <div className="text-center py-20">
+            <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Plus size={32} className="text-gray-500" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">No Cards Yet</h2>
+            <p className="text-gray-400 mb-4">Start your collection by buying from the marketplace</p>
+          </div>
+        );
+
+        if (filteredCards.length === 0) return (
+          <div className="text-center py-20 opacity-50">
+            <Search size={48} className="mx-auto text-gray-600 mb-4" />
+            <h2 className="text-xl font-semibold mb-2 text-gray-400">No Matching Cards</h2>
+            <p className="text-gray-500">Try adjusting your filters</p>
+          </div>
+        );
+
+        return (
+          <>
+            {/* Active Listings Section */}
+            {listedCards.length > 0 && (
+              <div className="mb-10">
+                <button
+                  onClick={() => setShowListings(!showListings)}
+                  className="flex items-center space-x-2 mb-4 w-full group cursor-pointer"
+                >
+                  <Tag size={20} className="text-green-400" />
+                  <h2 className="text-xl font-semibold">Active Listings</h2>
+                  <span className="px-2 py-0.5 bg-green-500/15 text-green-400 rounded-full text-sm font-semibold">
+                    {listedCards.length}
+                  </span>
+                  <ChevronDown
+                    size={20}
+                    className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showListings ? '' : '-rotate-90'}`}
+                  />
+                </button>
+                {showListings && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {listedCards.map((card) => {
+                    const label = getListingLabel(card);
+                    return (
+                      <div key={card.tokenId} className="relative group hover:scale-105 transition-transform duration-300">
+                        <Link to={`/card/${card.tokenId}`} className="block">
+                          <PokemonCard
+                            pokemon={card}
+                            listing={card.listing}
+                            auction={card.auction}
+                            dutchAuction={card.dutchAuction}
+                            disableHoverScale
+                          />
+                        </Link>
+                        {label && (
+                          <div className={`absolute top-2 left-2 z-10 px-2 py-1 text-xs font-semibold rounded-lg border ${label.color}`}>
+                            {label.text}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 z-10 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl p-2 h-full pointer-events-none">
+                          <div className="pointer-events-auto">
+                            <Link
+                              to={`/card/${card.tokenId}`}
+                              className="flex items-center space-x-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-white font-semibold"
+                            >
+                              <span>View Details</span>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>}
+              </div>
+            )}
+
+            {/* Collection Section */}
+            {unlistedCards.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowCollection(!showCollection)}
+                  className="flex items-center space-x-2 mb-4 w-full group cursor-pointer"
+                >
+                  <Star size={20} className="text-yellow-400" />
+                  <h2 className="text-xl font-semibold">Your Collection</h2>
+                  <span className="px-2 py-0.5 bg-yellow-500/15 text-yellow-400 rounded-full text-sm font-semibold">
+                    {unlistedCards.length}
+                  </span>
+                  <ChevronDown
+                    size={20}
+                    className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showCollection ? '' : '-rotate-90'}`}
+                  />
+                </button>
+                {showCollection && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {unlistedCards.map((card) => (
+                    <div key={card.tokenId} className="relative group hover:scale-105 transition-transform duration-300">
+                      <Link to={`/card/${card.tokenId}`} className="block">
+                        <PokemonCard
+                          pokemon={card}
+                          disableHoverScale
+                        />
+                      </Link>
+                      <div className="absolute inset-0 z-10 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl p-2 h-full pointer-events-none">
+                        <div className="flex items-center space-x-2 pointer-events-auto">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedCard(card);
+                              setShowAuctionModal(false);
+                              setShowDutchAuctionModal(false);
+                              setShowListModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-3 py-2 bg-primary rounded-lg hover:bg-primary/80 transition-colors text-sm"
+                          >
+                            <Tag size={16} />
+                            <span>List</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedCard(card);
+                              setShowListModal(false);
+                              setShowDutchAuctionModal(false);
+                              setShowAuctionModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors text-sm"
+                          >
+                            <Gavel size={16} />
+                            <span>Auction</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedCard(card);
+                              setShowListModal(false);
+                              setShowAuctionModal(false);
+                              setShowDutchAuctionModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-3 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                          >
+                            <TrendingDown size={16} />
+                            <span>Dutch</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* List Modal */}
       {showListModal && selectedCard && (

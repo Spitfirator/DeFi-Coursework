@@ -3,7 +3,7 @@ import { useWeb3 } from '../context/Web3Context';
 import PokemonCard from '../components/PokemonCard';
 
 import { useNavigate } from 'react-router-dom';
-import { Loader, AlertCircle, Clock, ArrowRight, ArrowUp, Heart } from 'lucide-react';
+import { Loader, AlertCircle, Clock, ArrowRight, ArrowUp, Heart, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function DayCare() {
@@ -13,6 +13,8 @@ function DayCare() {
   const [stakedCards, setStakedCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showStaked, setShowStaked] = useState(true);
+  const [showAvailable, setShowAvailable] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!pokemonContract || !dayCareContract || !account) {
@@ -186,11 +188,12 @@ function DayCare() {
           {/* Staked Pokemon Section */}
           {stakedCards.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowStaked(!showStaked)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Clock size={24} className="text-yellow-400" />
-                <span>Staked Pokemon ({stakedCards.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <h2 className="text-xl font-semibold">Staked Pokemon ({stakedCards.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showStaked ? '' : '-rotate-90'}`} />
+              </button>
+              {showStaked && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {stakedCards.map((card) => {
                   const pendingLvls = estimateLevels(card.stakeTimestamp);
                   const effectiveLevel = Math.min(card.level + pendingLvls, 100);
@@ -211,7 +214,7 @@ function DayCare() {
                         </div>
                       </div>
 
-                      <PokemonCard pokemon={card} />
+                      <PokemonCard pokemon={card} disableNavigation />
 
                       {/* Level Gain Preview */}
                       <div className="px-4 pb-4">
@@ -256,22 +259,23 @@ function DayCare() {
                     </div>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
 
           {/* Available Pokemon Section */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Your Pokemon ({myCards.length})
-            </h2>
-            {myCards.length > 0 ? (
+            <button onClick={() => setShowAvailable(!showAvailable)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
+              <h2 className="text-xl font-semibold">Your Pokemon ({myCards.length})</h2>
+              <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showAvailable ? '' : '-rotate-90'}`} />
+            </button>
+            {showAvailable && (myCards.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {myCards.map((card) => (
-                  <div key={card.tokenId} className="relative group">
-                    <PokemonCard pokemon={card} />
+                  <div key={card.tokenId} className="relative group hover:scale-105 transition-transform duration-300">
+                    <PokemonCard pokemon={card} disableNavigation disableHoverScale />
                     {/* Stake Overlay */}
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                    <div className="absolute inset-0 z-10 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
                       <button
                         onClick={() => handleStake(card.tokenId)}
                         disabled={isProcessing || card.level >= 100}
@@ -294,7 +298,7 @@ function DayCare() {
               </div>
             ) : (
               <p className="text-gray-400 text-center py-8">All your Pokemon are currently in the Day Care!</p>
-            )}
+            ))}
           </div>
         </>
       )}

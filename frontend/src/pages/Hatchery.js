@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import PokemonCard from '../components/PokemonCard';
-import { Loader, AlertCircle, Heart, Egg, Clock, Sparkles, X, Check } from 'lucide-react';
+import { Loader, AlertCircle, Heart, Egg, Clock, Sparkles, X, Check, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function Hatchery() {
@@ -16,6 +16,10 @@ function Hatchery() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedParent1, setSelectedParent1] = useState(null);
   const [selectedParent2, setSelectedParent2] = useState(null);
+  const [showParents, setShowParents] = useState(true);
+  const [showBreeding, setShowBreeding] = useState(true);
+  const [showIncubating, setShowIncubating] = useState(true);
+  const [showHatched, setShowHatched] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!pokemonContract || !hatcheryContract || !account) {
@@ -231,7 +235,7 @@ function Hatchery() {
         <h1 className="text-3xl font-bold mb-2">Hatchery</h1>
         <p className="text-gray-400">
           Breed two Pokemon to create a new egg. Parents are locked for 15 seconds during breeding,
-          then the egg incubates for another 15 seconds before hatching. Eggs are tradeable!
+          then the egg incubates for another 15 seconds before hatching.
         </p>
       </div>
 
@@ -243,12 +247,13 @@ function Hatchery() {
         <>
           {/* Parent Selection Area */}
           <div className="mb-12">
-            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+            <button onClick={() => setShowParents(!showParents)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
               <Heart size={24} className="text-pink-400" />
-              <span>Select Two Parents</span>
-            </h2>
+              <h2 className="text-xl font-semibold">Select Two Parents</h2>
+              <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showParents ? '' : '-rotate-90'}`} />
+            </button>
 
-            {/* Selected Parents Preview */}
+            {showParents && <>{/* Selected Parents Preview */}
             <div className="bg-gray-900 rounded-xl p-6 mb-6 border border-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                 {/* Parent 1 */}
@@ -326,7 +331,7 @@ function Hatchery() {
                             : 'hover:ring-2 hover:ring-pink-500/50 rounded-xl'
                         }`}
                       >
-                        <PokemonCard pokemon={card} />
+                        <PokemonCard pokemon={card} disableNavigation />
                         {isSelected && (
                           <div className="absolute top-2 left-2 z-10 bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                             Selected
@@ -342,16 +347,18 @@ function Hatchery() {
                 <p>No available Pokemon for breeding. Your Pokemon may be staked, locked, or eggs.</p>
               </div>
             )}
+          </>}
           </div>
 
           {/* Awaiting Egg Mint Sessions */}
           {awaitingEgg.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowBreeding(!showBreeding)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Heart size={24} className="text-red-400 animate-pulse" />
-                <span>Breeding in Progress ({awaitingEgg.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h2 className="text-xl font-semibold">Breeding in Progress ({awaitingEgg.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showBreeding ? '' : '-rotate-90'}`} />
+              </button>
+              {showBreeding && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {awaitingEgg.map((session) => {
                   const breedReady = now >= session.breedReadyTimestamp;
                   return (
@@ -401,18 +408,19 @@ function Hatchery() {
                     </div>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
 
           {/* Incubating Eggs */}
           {incubating.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowIncubating(!showIncubating)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Egg size={24} className="text-yellow-400" />
-                <span>Incubating Eggs ({incubating.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h2 className="text-xl font-semibold">Incubating Eggs ({incubating.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showIncubating ? '' : '-rotate-90'}`} />
+              </button>
+              {showIncubating && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {incubating.map((session) => {
                   const isReady = now >= session.hatchReadyTimestamp;
                   return (
@@ -468,18 +476,19 @@ function Hatchery() {
                     </div>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
 
           {/* Hatched Pokemon */}
           {hatched.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowHatched(!showHatched)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Sparkles size={24} className="text-green-400" />
-                <span>Hatched Pokemon ({hatched.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <h2 className="text-xl font-semibold">Hatched Pokemon ({hatched.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showHatched ? '' : '-rotate-90'}`} />
+              </button>
+              {showHatched && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {hatched.map((session) => (
                   <div key={session.sessionId} className="bg-gray-900 rounded-xl overflow-hidden border-2 border-green-500/30">
                     <div className="bg-green-500/10 px-4 py-2 border-b border-green-500/20">
@@ -500,7 +509,7 @@ function Hatchery() {
                     )}
                   </div>
                 ))}
-              </div>
+              </div>}
             </div>
           )}
 

@@ -17,6 +17,27 @@ import SwapModal from '../components/SwapModal';
 import SwapRequestsDisplay from '../components/SwapRequestsDisplay';
 import { getPokemonImageUrl } from '../utils/pokemon';
 
+const typeHexColors = {
+  Normal: { from: '#A8A77A', to: '#ACAD99' },
+  Fire: { from: '#EE8130', to: '#E87A3D' },
+  Water: { from: '#6390F0', to: '#639CE4' },
+  Electric: { from: '#F7D02C', to: '#E7C536' },
+  Grass: { from: '#7AC74C', to: '#82C95B' },
+  Ice: { from: '#96D9D6', to: '#81CFD7' },
+  Fighting: { from: '#C22E28', to: '#C45D4C' },
+  Poison: { from: '#A33EA1', to: '#B369AF' },
+  Ground: { from: '#E2BF65', to: '#CEB250' },
+  Flying: { from: '#A98FF3', to: '#90AAD7' },
+  Psychic: { from: '#F95587', to: '#E96C95' },
+  Bug: { from: '#A6B91A', to: '#ACC23E' },
+  Rock: { from: '#B6A136', to: '#BAA85E' },
+  Ghost: { from: '#735797', to: '#816DB6' },
+  Dragon: { from: '#6F35FC', to: '#8572C8' },
+  Dark: { from: '#705746', to: '#79726B' },
+  Steel: { from: '#B7B7CE', to: '#9FA9AF' },
+  Fairy: { from: '#D685AD', to: '#E8B0EB' },
+};
+
 function CardDetail() {
   const { tokenId } = useParams();
   const navigate = useNavigate();
@@ -460,13 +481,10 @@ function CardDetail() {
       <div className="grid md:grid-cols-2 gap-8">
         {/* Card Display */}
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-          <div className={`h-80 bg-gradient-to-br ${pokemon.pokemonType === 'Fire' ? 'from-orange-500/20 to-red-600/20 border-orange-500/30' :
-            pokemon.pokemonType === 'Water' ? 'from-blue-400/20 to-blue-600/20 border-blue-400/30' :
-              pokemon.pokemonType === 'Grass' ? 'from-green-400/20 to-green-600/20 border-green-400/30' :
-                pokemon.pokemonType === 'Electric' ? 'from-yellow-400/20 to-yellow-600/20 border-yellow-400/30' :
-                  pokemon.pokemonType === 'Psychic' ? 'from-pink-400/20 to-purple-600/20 border-purple-400/30' :
-                    'from-gray-400/20 to-gray-600/20 border-gray-400/30'
-            } rounded-xl border-2 flex items-center justify-center mb-6 relative overflow-hidden group`}>
+          <div className="h-80 rounded-xl border-2 flex items-center justify-center mb-6 relative overflow-hidden group" style={{
+            background: `linear-gradient(to bottom, ${(typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).from}88 0%, ${(typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).to}55 50%, #111827 100%)`,
+            borderColor: `${(typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).from}4D`
+          }}>
             {getPokemonImageUrl(pokemon.name) && !imageError ? (
               <img
                 src={getPokemonImageUrl(pokemon.name)}
@@ -529,13 +547,11 @@ function CardDetail() {
                 }`}>
                 {pokemon.rarity}
               </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${pokemon.pokemonType === 'Fire' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                pokemon.pokemonType === 'Water' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                  pokemon.pokemonType === 'Grass' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                    pokemon.pokemonType === 'Electric' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                      pokemon.pokemonType === 'Psychic' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                        'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                }`}>
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border" style={{
+                backgroundColor: `${(typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).from}33`,
+                color: (typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).from,
+                borderColor: `${(typeHexColors[pokemon.pokemonType] || typeHexColors.Normal).from}4D`
+              }}>
                 {pokemon.pokemonType}
               </span>
               <span className="text-gray-500 font-mono text-sm">#{pokemon.tokenId}</span>
@@ -729,6 +745,7 @@ function CardDetail() {
                 auction={dutchAuction}
                 tokenId={tokenId}
                 tradingContract={tradingContract}
+                account={account}
                 onPurchase={() => {
                   triggerRefresh();
                   loadCardData();

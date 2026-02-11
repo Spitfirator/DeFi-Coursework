@@ -58,7 +58,7 @@ interface IPokemonCard is IERC721 {
  */
 contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
     // ============ State Variables ============
-    IPokemonCard public pokemonCard;
+    IPokemonCard public immutable pokemonCard;
     uint256 public levelInterval = 2; // seconds per level
     uint256 public constant MAX_LEVEL = 100;
     uint256 public constant HP_PER_LEVEL = 5;
@@ -86,9 +86,11 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
     error TokenNotStaked();
     error TokenAlreadyStaked();
     error InvalidInterval();
+    error ZeroAddress();
 
     // ============ Constructor ============
     constructor(address _pokemonCard) Ownable(msg.sender) {
+        if (_pokemonCard == address(0)) revert ZeroAddress();
         pokemonCard = IPokemonCard(_pokemonCard);
     }
 
@@ -102,22 +104,22 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
      * @param tokenId The token ID to stake
      */
     function stake(uint256 tokenId) external nonReentrant {
+        // Checks
         if (pokemonCard.ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
         if (stakes[tokenId].owner != address(0)) revert TokenAlreadyStaked();
 
         IPokemonCard.PokemonStats memory stats = pokemonCard.getPokemonStats(tokenId);
 
-        // Transfer NFT to this contract
-        pokemonCard.transferFrom(msg.sender, address(this), tokenId);
-
-        // Record stake info
+        // Effects: record stake info BEFORE the external transfer (CEI pattern)
         stakes[tokenId] = StakeInfo({
             owner: msg.sender,
             stakeTimestamp: block.timestamp,
             levelAtStake: stats.level
         });
-
         _stakedTokensByOwner[msg.sender].push(tokenId);
+
+        // Interactions: transfer NFT to this contract
+        pokemonCard.transferFrom(msg.sender, address(this), tokenId);
 
         emit PokemonStaked(tokenId, msg.sender, block.timestamp);
     }
@@ -139,7 +141,7 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
         uint256 elapsed = block.timestamp - info.stakeTimestamp;
         uint256 rawLevelsGained = elapsed / levelInterval;
 
-        // Get current stats
+        // Get current stats (view call — no state change)
         IPokemonCard.PokemonStats memory stats = pokemonCard.getPokemonStats(tokenId);
 
         // Apply level cap
@@ -154,15 +156,13 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
         uint256 newAttack = stats.attack + (actualGain * ATTACK_PER_LEVEL);
         uint256 newDefense = stats.defense + (actualGain * DEFENSE_PER_LEVEL);
 
-        // Update stats on the NFT contract
-        pokemonCard.updateStats(tokenId, newLevel, newHp, newAttack, newDefense);
-
-        // Transfer NFT back to owner
-        pokemonCard.transferFrom(address(this), msg.sender, tokenId);
-
-        // Clean up stake data
+        // Effects: clean up stake data BEFORE external calls (CEI pattern)
         _removeStakedToken(msg.sender, tokenId);
         delete stakes[tokenId];
+
+        // Interactions: external calls after state is finalised
+        pokemonCard.updateStats(tokenId, newLevel, newHp, newAttack, newDefense);
+        pokemonCard.transferFrom(address(this), msg.sender, tokenId);
 
         emit PokemonUnstaked(tokenId, msg.sender, newLevel, actualGain);
     }
@@ -242,12 +242,14 @@ contract DayCare is ERC721Holder, Ownable, ReentrancyGuard {
      */
     function _removeStakedToken(address owner, uint256 tokenId) internal {
         uint256[] storage tokens = _stakedTokensByOwner[owner];
-        for (uint256 i = 0; i < tokens.length; i++) {
+        uint256 len = tokens.length;
+        for (uint256 i = 0; i < len;) {
             if (tokens[i] == tokenId) {
-                tokens[i] = tokens[tokens.length - 1];
+                tokens[i] = tokens[len - 1];
                 tokens.pop();
                 return;
             }
+            unchecked { ++i; }
         }
     }
 }

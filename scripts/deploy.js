@@ -100,16 +100,36 @@ async function main() {
   console.log("  ✅ MINTER_ROLE granted to Hatchery");
   console.log();
 
-  // Register evolution paths
+  // Register evolution paths (every 25 levels: stage 1 at Lv 25, stage 2 at Lv 50)
   console.log("🧬 Registering evolution paths...");
   const evolutions = [
-    ["Bulbasaur", "Venusaur", "Grass", "Rare", 32, 30, 20, 20, 10],
-    ["Charmander", "Charizard", "Fire", "Rare", 36, 28, 29, 18, 20],
-    ["Squirtle", "Blastoise", "Water", "Rare", 36, 29, 23, 25, 12],
-    ["Magikarp", "Gyarados", "Water", "Rare", 20, 50, 45, 30, 25],
-    ["Pikachu", "Raichu", "Electric", "Uncommon", 25, 20, 20, 15, 20],
-    ["Growlithe", "Arcanine", "Fire", "Rare", 30, 30, 25, 20, 20],
-    ["Eevee", "Jolteon", "Electric", "Uncommon", 25, 15, 25, 15, 30],
+    // --- 3-stage chains (Lv 25 → Lv 50) ---
+    // [fromName, toName, toType, toRarity, levelThreshold, hpBoost, atkBoost, defBoost, spdBoost]
+    ["Bulbasaur",  "Ivysaur",    "Grass",   "Uncommon", 25, 15, 10, 10, 5],
+    ["Ivysaur",    "Venusaur",   "Grass",   "Rare",     50, 20, 15, 15, 10],
+    ["Charmander", "Charmeleon", "Fire",    "Uncommon", 25, 14, 15, 9, 10],
+    ["Charmeleon", "Charizard",  "Fire",    "Rare",     50, 18, 18, 12, 14],
+    ["Squirtle",   "Wartortle",  "Water",   "Uncommon", 25, 15, 12, 13, 6],
+    ["Wartortle",  "Blastoise",  "Water",   "Rare",     50, 18, 14, 16, 8],
+    ["Caterpie",   "Metapod",    "Bug",     "Common",   25, 10, 5, 15, 3],
+    ["Metapod",    "Butterfree", "Bug",     "Uncommon", 50, 15, 20, 10, 20],
+    ["Pidgey",     "Pidgeotto",  "Flying",  "Common",   25, 13, 12, 10, 12],
+    ["Pidgeotto",  "Pidgeot",    "Flying",  "Uncommon", 50, 15, 15, 12, 15],
+    ["Zubat",      "Golbat",     "Poison",  "Common",   25, 15, 15, 10, 15],
+    ["Golbat",     "Crobat",     "Poison",  "Rare",     50, 15, 15, 15, 20],
+    ["Oddish",     "Gloom",      "Grass",   "Common",   25, 12, 12, 10, 5],
+    ["Gloom",      "Vileplume",  "Grass",   "Uncommon", 50, 18, 18, 15, 8],
+    ["Geodude",    "Graveler",   "Rock",    "Common",   25, 15, 15, 15, 5],
+    ["Graveler",   "Golem",      "Rock",    "Rare",     50, 18, 18, 20, 5],
+
+    // --- 2-stage chains (Lv 25) ---
+    ["Magikarp",   "Gyarados",   "Water",    "Rare",     25, 50, 45, 30, 25],
+    ["Pikachu",    "Raichu",     "Electric", "Uncommon", 25, 20, 20, 15, 20],
+    ["Growlithe",  "Arcanine",   "Fire",     "Rare",     25, 30, 25, 20, 20],
+    ["Eevee",      "Jolteon",    "Electric", "Uncommon", 25, 15, 25, 15, 30],
+    ["Psyduck",    "Golduck",    "Water",    "Uncommon", 25, 20, 20, 15, 20],
+    ["Jigglypuff", "Wigglytuff", "Fairy",    "Uncommon", 25, 30, 15, 10, 5],
+    ["Rattata",    "Raticate",   "Normal",   "Common",   25, 15, 18, 12, 15],
   ];
 
   for (const evo of evolutions) {

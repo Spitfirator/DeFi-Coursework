@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import { useCart } from '../context/CartContext';
-import { Wallet, Store, Grid, AlertTriangle, Egg, Sparkles, ShoppingCart } from 'lucide-react';
+import { Wallet, Store, Grid, AlertTriangle, Egg, Sparkles, ShoppingCart, Menu, X } from 'lucide-react';
 import CartModal from './CartModal';
 
 function Navbar() {
   const { account, isConnecting, isCorrectNetwork, connectWallet, disconnectWallet, switchNetwork } = useWeb3();
   const { cartItems } = useCart();
   const [showCart, setShowCart] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
@@ -55,7 +56,7 @@ function Navbar() {
             ))}
           </div>
 
-          {/* Wallet Connection */}
+          {/* Right side: cart, wallet, hamburger */}
           <div className="flex items-center space-x-3">
             {/* Cart Button */}
             <button
@@ -89,7 +90,7 @@ function Navbar() {
                 </div>
                 <button
                   onClick={disconnectWallet}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
+                  className="hidden md:block px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
                 >
                   Disconnect
                 </button>
@@ -101,12 +102,52 @@ function Navbar() {
                 className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
               >
                 <Wallet size={18} />
-                <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                <span className="sm:hidden">{isConnecting ? '...' : 'Connect'}</span>
+              </button>
+            )}
+
+            {/* Hamburger Button (mobile only) */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-800 bg-darker/95 backdrop-blur-md">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {navLinks.map(({ path, label, icon: Icon }) => (
+              <Link
+                key={path}
+                to={path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${location.pathname === path
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+              >
+                <Icon size={20} />
+                <span className="font-medium">{label}</span>
+              </Link>
+            ))}
+            {account && (
+              <button
+                onClick={() => { disconnectWallet(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-all"
+              >
+                <Wallet size={20} />
+                <span className="font-medium">Disconnect Wallet</span>
               </button>
             )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Cart Modal */}
       <CartModal isOpen={showCart} onClose={() => setShowCart(false)} />

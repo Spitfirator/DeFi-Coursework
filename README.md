@@ -151,8 +151,9 @@ npx hardhat compile
 npx hardhat test
 
 # Deploy locally
-npx hardhat node                                              # Terminal 1
-npx hardhat run scripts/deploy_and_mint_all.ts --network localhost  # Terminal 2
+npx hardhat node                                       # Terminal 1
+npx hardhat run scripts/deploy.js --network localhost  # Terminal 2
+cd frontend && npm start                               # Terminal 3
 ```
 
 ### Scripts

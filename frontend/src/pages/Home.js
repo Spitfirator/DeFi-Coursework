@@ -19,8 +19,8 @@ function Home() {
 
     try {
       // Total items
-      const totalMinted = await pokemonContract.totalMinted();
-      const total = Number(totalMinted);
+      const supply = await pokemonContract.totalSupply();
+      const total = Number(supply);
       setTotalItems(total.toString());
 
       // Iterate tokens for listings/auctions/dutch + floor price
@@ -32,13 +32,14 @@ function Home() {
 
       for (let i = 0; i < total; i++) {
         try {
-          const stats = await pokemonContract.getPokemonStats(i);
-          const listing = await tradingContract.getListing(i);
-          const auction = await tradingContract.getAuction(i);
-          const dutchData = await tradingContract.dutchAuctions(i);
+          const tokenId = Number(await pokemonContract.tokenByIndex(i));
+          const stats = await pokemonContract.getPokemonStats(tokenId);
+          const listing = await tradingContract.getListing(tokenId);
+          const auction = await tradingContract.getAuction(tokenId);
+          const dutchData = await tradingContract.dutchAuctions(tokenId);
 
           const pokemonData = {
-            tokenId: i,
+            tokenId,
             name: stats.name,
             pokemonType: stats.pokemonType,
             rarity: stats.rarity,
@@ -72,7 +73,7 @@ function Home() {
             if (minPrice === null || startPriceWei < minPrice) {
               minPrice = startPriceWei;
             }
-            const timeRemaining = await tradingContract.getAuctionTimeRemaining(i);
+            const timeRemaining = await tradingContract.getAuctionTimeRemaining(tokenId);
             auctionsData.push({
               ...pokemonData,
               auction: {
@@ -94,7 +95,7 @@ function Home() {
             // Or just use startingPrice/reservePrice as bounds?
             // Use current price from contract for accuracy?
             // Let's call getCurrentDutchPrice if active
-            const currentPrice = await tradingContract.getCurrentDutchPrice(i);
+            const currentPrice = await tradingContract.getCurrentDutchPrice(tokenId);
 
             if (minPrice === null || currentPrice < minPrice) {
               minPrice = currentPrice;
@@ -279,7 +280,7 @@ function Home() {
             <span className="text-red-500" style={{ WebkitTextStroke: '2px #dc2626' }}>Own.</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-300 mb-8">
-            100 Unique Pokemon NFTs
+            {totalItems !== '---' ? totalItems : '...'} Unique Pokemon NFTs
           </p>
 
           {/* Stats */}

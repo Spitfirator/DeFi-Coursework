@@ -1,8 +1,58 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
-import PokemonCard from '../components/PokemonCard';
-import { Loader, AlertCircle, ArrowRight, ArrowUp, Lock, Clock } from 'lucide-react';
+import { Loader, AlertCircle, ArrowRight, ArrowUp, Lock, Clock, ChevronDown, Zap, Flame, Droplet, Leaf, Brain, Ghost, Mountain, Bug, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const typeColors = {
+  Normal:   { from: '#A8A77A', to: '#ACAD99', icon: Star },
+  Fire:     { from: '#EE8130', to: '#E87A3D', icon: Flame },
+  Water:    { from: '#6390F0', to: '#639CE4', icon: Droplet },
+  Electric: { from: '#F7D02C', to: '#E7C536', icon: Zap },
+  Grass:    { from: '#7AC74C', to: '#82C95B', icon: Leaf },
+  Ice:      { from: '#96D9D6', to: '#81CFD7', icon: Droplet },
+  Fighting: { from: '#C22E28', to: '#C45D4C', icon: Zap },
+  Poison:   { from: '#A33EA1', to: '#B369AF', icon: Bug },
+  Ground:   { from: '#E2BF65', to: '#CEB250', icon: Mountain },
+  Flying:   { from: '#A98FF3', to: '#90AAD7', icon: Leaf },
+  Psychic:  { from: '#F95587', to: '#E96C95', icon: Brain },
+  Bug:      { from: '#A6B91A', to: '#ACC23E', icon: Bug },
+  Rock:     { from: '#B6A136', to: '#BAA85E', icon: Mountain },
+  Ghost:    { from: '#735797', to: '#816DB6', icon: Ghost },
+  Dragon:   { from: '#6F35FC', to: '#8572C8', icon: Flame },
+  Dark:     { from: '#705746', to: '#79726B', icon: Ghost },
+  Steel:    { from: '#B7B7CE', to: '#9FA9AF', icon: Star },
+  Fairy:    { from: '#D685AD', to: '#E8B0EB', icon: Star },
+};
+
+const pokemonToPokedexId = {
+  // Legendaries
+  'Mewtwo': 150, 'Lugia': 249, 'Rayquaza': 384, 'Arceus': 493, 'Giratina': 487,
+  // Fully evolved (in collection)
+  'Charizard': 6, 'Blastoise': 9, 'Venusaur': 3, 'Gengar': 94, 'Dragonite': 149,
+  'Gyarados': 130, 'Alakazam': 65, 'Machamp': 68, 'Snorlax': 143, 'Arcanine': 59,
+  'Lapras': 131, 'Tyranitar': 248, 'Metagross': 376, 'Salamence': 373, 'Garchomp': 445,
+  // Base forms (in collection)
+  'Pikachu': 25, 'Bulbasaur': 1, 'Charmander': 4, 'Squirtle': 7, 'Pidgey': 16,
+  'Rattata': 19, 'Zubat': 41, 'Geodude': 74, 'Magikarp': 129, 'Caterpie': 10,
+  'Eevee': 133, 'Jigglypuff': 39, 'Psyduck': 54, 'Growlithe': 58, 'Oddish': 43,
+  // Evolved forms (from evolution chains)
+  'Raichu': 26, 'Jolteon': 135,
+  'Ivysaur': 2, 'Charmeleon': 5, 'Wartortle': 8,
+  'Metapod': 11, 'Butterfree': 12,
+  'Pidgeotto': 17, 'Pidgeot': 18,
+  'Raticate': 20, 'Golduck': 55, 'Wigglytuff': 40,
+  'Golbat': 42, 'Crobat': 169,
+  'Gloom': 44, 'Vileplume': 45,
+  'Graveler': 75, 'Golem': 76,
+};
+
+const getPokemonImageUrl = (name) => {
+  const pokedexId = pokemonToPokedexId[name];
+  if (pokedexId) {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokedexId}.png`;
+  }
+  return null;
+};
 
 function Evolution() {
   const { pokemonContract, evolutionContract, dayCareContract, account, refreshTrigger, triggerRefresh, blockTime: now } = useWeb3();
@@ -13,6 +63,9 @@ function Evolution() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [evolutionPreview, setEvolutionPreview] = useState(null);
+  const [showEligible, setShowEligible] = useState(true);
+  const [showStaked, setShowStaked] = useState(true);
+  const [showIneligible, setShowIneligible] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!pokemonContract || !evolutionContract || !account) {
@@ -84,8 +137,7 @@ function Evolution() {
             const path = await evolutionContract.getEvolutionPath(stats.name);
             if (path.exists) {
               const stakeInfo = await dayCareContract.getStakeInfo(tokenId);
-              const pendingLevels = await dayCareContract.getPendingLevels(tokenId);
-              const effectiveLevel = Math.min(Number(stats.level) + Number(pendingLevels), 100);
+              const levelAtStake = Number(stakeInfo.levelAtStake);
               staked.push({
                 tokenId: Number(tokenId),
                 name: stats.name,
@@ -97,8 +149,7 @@ function Evolution() {
                 speed: Number(stats.speed),
                 generation: Number(stats.generation),
                 level: Number(stats.level),
-                pendingLevels: Number(pendingLevels),
-                effectiveLevel,
+                levelAtStake,
                 stakeTimestamp: Number(stakeInfo.stakeTimestamp),
                 evolutionPath: {
                   toName: path.toName,
@@ -318,124 +369,198 @@ function Evolution() {
           {/* Ready to Evolve */}
           {eligibleCards.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowEligible(!showEligible)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <ArrowUp size={24} className="text-purple-400" />
-                <span>Ready to Evolve ({eligibleCards.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {eligibleCards.map((card) => (
-                  <div key={card.tokenId} className="bg-gray-900 rounded-xl overflow-hidden border-2 border-purple-500/50">
-                    {/* Evolution Ready Header */}
-                    <div className="bg-purple-500/10 px-4 py-3 border-b border-purple-500/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-purple-400 text-sm font-semibold">Ready to Evolve!</span>
-                        <span className="text-purple-400 text-xs">
-                          {card.name} → {card.evolutionPath.toName}
-                        </span>
+                <h2 className="text-xl font-semibold">Ready to Evolve ({eligibleCards.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showEligible ? '' : '-rotate-90'}`} />
+              </button>
+              {showEligible && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {eligibleCards.map((card) => {
+                  const typeConfig = typeColors[card.pokemonType] || typeColors.Normal;
+                  const imageUrl = getPokemonImageUrl(card.name);
+                  return (
+                    <div key={card.tokenId} className="bg-gray-900 rounded-xl overflow-hidden border-2 border-purple-500/50">
+                      <div className="h-32 flex items-center justify-center relative overflow-hidden" style={{ background: `linear-gradient(to bottom, ${typeConfig.from} 0%, ${typeConfig.to} 50%, #111827 100%)` }}>
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={card.name} className="h-28 w-28 object-contain z-10 drop-shadow-lg" />
+                        ) : (
+                          <typeConfig.icon size={48} className="text-white/30" />
+                        )}
+                        <div className="absolute top-2 right-2 px-2 py-0.5 text-xs font-bold rounded-full bg-black/40 text-yellow-400">
+                          Lv.{card.level}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-bold text-white">{card.name}</h3>
+                          <span className="text-xs text-gray-500">#{card.tokenId}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                          <span className="px-1.5 py-0.5 rounded text-white" style={{ background: `linear-gradient(to right, ${typeConfig.from}, ${typeConfig.to})` }}>{card.pokemonType}</span>
+                          <span>{card.rarity}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-gray-400">Level</span>
+                          <span className="text-green-400 font-semibold">
+                            {card.level} / {card.evolutionPath.levelThreshold}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-1.5 mb-3">
+                          <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-1.5 rounded-full" style={{ width: '100%' }} />
+                        </div>
+                        <div className="text-xs text-purple-400 text-center mb-3">
+                          Evolves into <span className="font-semibold">{card.evolutionPath.toName}</span>
+                        </div>
+                        <button
+                          onClick={() => loadPreview(card)}
+                          disabled={isProcessing}
+                          className="w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+                        >
+                          Evolve Now
+                        </button>
                       </div>
                     </div>
-
-                    <PokemonCard pokemon={card} />
-
-                    <div className="px-4 pb-4">
-                      <button
-                        onClick={() => loadPreview(card)}
-                        disabled={isProcessing}
-                        className="w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
-                      >
-                        Evolve to {card.evolutionPath.toName}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  );
+                })}
+              </div>}
             </div>
           )}
 
           {/* Currently Staking at Day Care */}
           {stakedCards.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowStaked(!showStaked)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Clock size={24} className="text-cyan-400" />
-                <span>Training at Day Care ({stakedCards.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <h2 className="text-xl font-semibold">Training at Day Care ({stakedCards.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showStaked ? '' : '-rotate-90'}`} />
+              </button>
+              {showStaked && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {stakedCards.map((card) => {
-                  const meetsThreshold = card.effectiveLevel >= card.evolutionPath.levelThreshold;
                   const elapsed = now ? now - card.stakeTimestamp : 0;
+                  const liveLevel = Math.min(card.levelAtStake + Math.floor(elapsed / 2), 100);
+                  const livePendingLevels = liveLevel - card.levelAtStake;
+                  const meetsThreshold = liveLevel >= card.evolutionPath.levelThreshold;
                   const hours = Math.floor(elapsed / 3600);
                   const minutes = Math.floor((elapsed % 3600) / 60);
                   const seconds = elapsed % 60;
+                  const typeConfig = typeColors[card.pokemonType] || typeColors.Normal;
+                  const imageUrl = getPokemonImageUrl(card.name);
+                  const progress = Math.min((liveLevel / card.evolutionPath.levelThreshold) * 100, 100);
                   return (
-                    <div key={card.tokenId} className="relative">
-                      <div className="opacity-85">
-                        <PokemonCard pokemon={{ ...card, level: card.effectiveLevel }} />
+                    <div key={card.tokenId} className="bg-gray-900 rounded-xl overflow-hidden border-2 border-cyan-500/30">
+                      <div className="h-32 flex items-center justify-center relative overflow-hidden opacity-90" style={{ background: `linear-gradient(to bottom, ${typeConfig.from} 0%, ${typeConfig.to} 50%, #111827 100%)` }}>
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={card.name} className="h-28 w-28 object-contain z-10 drop-shadow-lg" />
+                        ) : (
+                          <typeConfig.icon size={48} className="text-white/30" />
+                        )}
+                        <div className="absolute top-2 right-2 px-2 py-0.5 text-xs font-bold rounded-full bg-black/40 text-cyan-400">
+                          Lv.{liveLevel}
+                        </div>
                       </div>
-                      {/* Staking Info Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gray-900/90 px-4 py-3 rounded-b-xl">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-gray-400">
-                            {card.name} → {card.evolutionPath.toName}
-                          </span>
-                          <span className={meetsThreshold ? 'text-green-400 font-semibold' : 'text-yellow-400 font-semibold'}>
-                            Lv.{card.effectiveLevel}/{card.evolutionPath.levelThreshold}
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-bold text-white">{card.name}</h3>
+                          <span className="text-xs text-gray-500">#{card.tokenId}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                          <span className="px-1.5 py-0.5 rounded text-white" style={{ background: `linear-gradient(to right, ${typeConfig.from}, ${typeConfig.to})` }}>{card.pokemonType}</span>
+                          <span>{card.rarity}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-gray-400">Level</span>
+                          <span className={`font-semibold ${meetsThreshold ? 'text-green-400' : 'text-yellow-400'}`}>
+                            {liveLevel} / {card.evolutionPath.levelThreshold}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-1.5 mb-2">
+                        <div className="w-full bg-gray-700 rounded-full h-1.5 mb-3">
                           <div
-                            className={`h-1.5 rounded-full ${meetsThreshold ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'}`}
-                            style={{ width: `${Math.min((card.effectiveLevel / card.evolutionPath.levelThreshold) * 100, 100)}%` }}
-                          ></div>
+                            className={`h-1.5 rounded-full ${meetsThreshold ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-cyan-400 to-cyan-600'}`}
+                            style={{ width: `${progress}%` }}
+                          />
                         </div>
-                        {card.pendingLevels > 0 && (
-                          <div className="text-xs text-cyan-400 mb-1">
-                            +{card.pendingLevels} levels gained ({hours > 0 ? `${hours}h ` : ''}{minutes}m {seconds}s staked)
+                        <div className="text-xs text-center mb-2">
+                          <span className="text-gray-400">Evolves into </span>
+                          <span className="text-purple-400 font-semibold">{card.evolutionPath.toName}</span>
+                        </div>
+                        {livePendingLevels > 0 && (
+                          <div className="text-xs text-cyan-400 text-center mb-1">
+                            +{livePendingLevels} levels gained ({hours > 0 ? `${hours}h ` : ''}{minutes}m {seconds}s staked)
                           </div>
                         )}
-                        <div className="text-xs text-gray-500">
-                          {meetsThreshold ? 'Unstake to evolve!' : 'Still training...'}
+                        <div className="text-xs text-center font-medium mt-2">
+                          {meetsThreshold
+                            ? <span className="text-green-400">Unstake to evolve!</span>
+                            : <span className="text-gray-500">Still training...</span>
+                          }
                         </div>
                       </div>
                     </div>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
 
           {/* Not Yet Eligible */}
           {ineligibleCards.length > 0 && (
             <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <button onClick={() => setShowIneligible(!showIneligible)} className="flex items-center space-x-2 mb-4 w-full group cursor-pointer">
                 <Lock size={24} className="text-gray-500" />
-                <span>Needs More Training ({ineligibleCards.length})</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {ineligibleCards.map((card) => (
-                  <div key={card.tokenId} className="relative">
-                    <div className="opacity-75">
-                      <PokemonCard pokemon={card} />
-                    </div>
-                    {/* Level Requirement Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/90 px-4 py-3 rounded-b-xl">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">
-                          {card.name} → {card.evolutionPath.toName}
-                        </span>
-                        <span className="text-yellow-400 font-semibold">
-                          Lv.{card.level}/{card.evolutionPath.levelThreshold}
-                        </span>
+                <h2 className="text-xl font-semibold">Needs More Training ({ineligibleCards.length})</h2>
+                <ChevronDown size={20} className={`text-gray-400 group-hover:text-white transition-transform duration-200 ml-auto ${showIneligible ? '' : '-rotate-90'}`} />
+              </button>
+              {showIneligible && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {ineligibleCards.map((card) => {
+                  const typeConfig = typeColors[card.pokemonType] || typeColors.Normal;
+                  const imageUrl = getPokemonImageUrl(card.name);
+                  const progress = Math.min((card.level / card.evolutionPath.levelThreshold) * 100, 100);
+                  const levelsNeeded = card.evolutionPath.levelThreshold - card.level;
+                  return (
+                    <div key={card.tokenId} className="bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700">
+                      <div className="h-32 flex items-center justify-center relative overflow-hidden opacity-75" style={{ background: `linear-gradient(to bottom, ${typeConfig.from} 0%, ${typeConfig.to} 50%, #111827 100%)` }}>
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={card.name} className="h-28 w-28 object-contain z-10 drop-shadow-lg" />
+                        ) : (
+                          <typeConfig.icon size={48} className="text-white/30" />
+                        )}
+                        <div className="absolute top-2 right-2 px-2 py-0.5 text-xs font-bold rounded-full bg-black/40 text-yellow-400">
+                          Lv.{card.level}
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-                        <div
-                          className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-1.5 rounded-full"
-                          style={{ width: `${Math.min((card.level / card.evolutionPath.levelThreshold) * 100, 100)}%` }}
-                        ></div>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-bold text-white">{card.name}</h3>
+                          <span className="text-xs text-gray-500">#{card.tokenId}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                          <span className="px-1.5 py-0.5 rounded text-white" style={{ background: `linear-gradient(to right, ${typeConfig.from}, ${typeConfig.to})` }}>{card.pokemonType}</span>
+                          <span>{card.rarity}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-gray-400">Level</span>
+                          <span className="text-yellow-400 font-semibold">
+                            {card.level} / {card.evolutionPath.levelThreshold}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-1.5 mb-3">
+                          <div
+                            className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-1.5 rounded-full"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-center">
+                          <span className="text-gray-400">Evolves into </span>
+                          <span className="text-purple-400 font-semibold">{card.evolutionPath.toName}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 text-center mt-1">
+                          Needs {levelsNeeded} more level{levelsNeeded !== 1 ? 's' : ''}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  );
+                })}
+              </div>}
             </div>
           )}
 
