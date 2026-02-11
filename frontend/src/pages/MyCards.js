@@ -93,7 +93,8 @@ function MyCards() {
               reservePrice: ethers.formatEther(dutchData.reservePrice),
               startTime: Number(dutchData.startTime),
               duration: Number(dutchData.duration),
-              isActive: dutchData.isActive
+              isActive: dutchData.isActive,
+              isExpired: (Date.now() / 1000) > (Number(dutchData.startTime) + Number(dutchData.duration))
             };
           }
 
@@ -261,6 +262,22 @@ function MyCards() {
         return;
       }
 
+      // Check for expired Dutch Auction (Auto-Reclaim Logic)
+      if (selectedCard.dutchAuction && selectedCard.dutchAuction.isExpired) {
+        toast.loading('Claiming back NFT from expired auction...');
+        try {
+          const reclaimTx = await tradingContract.finalizeDutchAuction(selectedCard.tokenId);
+          await reclaimTx.wait();
+          toast.dismiss();
+          toast.success('NFT claimed successfully! Proceeding to list...');
+        } catch (err) {
+          console.error(err);
+          toast.dismiss();
+          toast.error('Failed to claim NFT. Please try again.');
+          return;
+        }
+      }
+
       // Check approval
       const tradingAddress = await tradingContract.getAddress();
       const isApproved = await pokemonContract.isApprovedForAll(
@@ -374,6 +391,22 @@ function MyCards() {
         return;
       }
 
+      // Check for expired Dutch Auction (Auto-Reclaim Logic)
+      if (selectedCard.dutchAuction && selectedCard.dutchAuction.isExpired) {
+        toast.loading('Claiming back NFT from expired auction...');
+        try {
+          const reclaimTx = await tradingContract.finalizeDutchAuction(selectedCard.tokenId);
+          await reclaimTx.wait();
+          toast.dismiss();
+          toast.success('NFT claimed successfully! Proceeding to create auction...');
+        } catch (err) {
+          console.error(err);
+          toast.dismiss();
+          toast.error('Failed to claim NFT. Please try again.');
+          return;
+        }
+      }
+
       // Check approval
       const isApproved = await pokemonContract.isApprovedForAll(
         account,
@@ -453,7 +486,7 @@ function MyCards() {
             className="flex items-center space-x-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
           >
             <DollarSign size={18} />
-            <span>Withdraw {pendingWithdrawal} ETH</span>
+            <span>Withdraw {parseFloat(pendingWithdrawal).toFixed(4)} ETH</span>
           </button>
         )}
       </div>
@@ -562,7 +595,7 @@ function MyCards() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterStatus === opt.id
                   ? 'bg-primary/15 text-primary border-primary/40'
                   : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
-                }`}
+                  }`}
               >
                 {opt.label}
               </button>
@@ -578,7 +611,7 @@ function MyCards() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterRarity === r
                   ? 'bg-primary/15 text-primary border-primary/40'
                   : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
-                }`}
+                  }`}
               >
                 {r}
               </button>
@@ -594,7 +627,7 @@ function MyCards() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border cursor-pointer ${filterType === t
                   ? 'bg-primary/15 text-primary border-primary/40'
                   : 'bg-gray-800/60 border-gray-700/50 text-gray-400 hover:border-gray-600 hover:text-white'
-                }`}
+                  }`}
               >
                 {t}
               </button>
@@ -616,8 +649,8 @@ function MyCards() {
           return matchesSearch && matchesRarity && matchesType && matchesStatus;
         });
 
-        const listedCards = filteredCards.filter(c => c.listing || c.auction || c.dutchAuction);
-        const unlistedCards = filteredCards.filter(c => !c.listing && !c.auction && !c.dutchAuction);
+        const listedCards = filteredCards.filter(c => c.listing || c.auction || (c.dutchAuction && !c.dutchAuction.isExpired));
+        const unlistedCards = filteredCards.filter(c => !c.listing && !c.auction && (!c.dutchAuction || c.dutchAuction.isExpired));
 
         const getListingLabel = (card) => {
           if (card.listing) return { text: 'Fixed Price', color: 'text-green-400 bg-green-500/15 border-green-500/30', price: `${card.listing.price} ETH` };

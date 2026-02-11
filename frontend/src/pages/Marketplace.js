@@ -87,18 +87,24 @@ function Marketplace() {
           }
 
           if (dutchAuction.isActive && !dutchAuction.sold) {
-            dutchAuctionsData.push({
-              ...pokemonData,
-              dutchAuction: {
-                seller: dutchAuction.seller,
-                startingPrice: ethers.formatEther(dutchAuction.startingPrice),
-                reservePrice: ethers.formatEther(dutchAuction.reservePrice),
-                startTime: Number(dutchAuction.startTime),
-                duration: Number(dutchAuction.duration),
-                isActive: dutchAuction.isActive,
-                sold: dutchAuction.sold
-              }
-            });
+            const now = Math.floor(Date.now() / 1000);
+            const endTime = Number(dutchAuction.startTime) + Number(dutchAuction.duration);
+
+            // Only show active, unexpired auctions
+            if (now < endTime) {
+              dutchAuctionsData.push({
+                ...pokemonData,
+                dutchAuction: {
+                  seller: dutchAuction.seller,
+                  startingPrice: ethers.formatEther(dutchAuction.startingPrice),
+                  reservePrice: ethers.formatEther(dutchAuction.reservePrice),
+                  startTime: Number(dutchAuction.startTime),
+                  duration: Number(dutchAuction.duration),
+                  isActive: dutchAuction.isActive,
+                  sold: dutchAuction.sold
+                }
+              });
+            }
           }
         } catch (err) {
           console.error(`Error loading token:`, err);
@@ -208,7 +214,7 @@ function Marketplace() {
               className={`p-2.5 rounded-lg border transition-colors flex-shrink-0 ${isFilterOpen || hasActiveFilters
                 ? 'bg-primary/10 border-primary/40 text-primary'
                 : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-              }`}
+                }`}
             >
               <Filter size={20} />
             </button>

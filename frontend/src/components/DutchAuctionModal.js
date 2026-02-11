@@ -39,6 +39,26 @@ function DutchAuctionModal({ isOpen, onClose, nft, tradingContract, pokemonContr
             });
             console.log('Contract address:', tradingContract.target);
 
+            console.log('Contract address:', tradingContract.target);
+
+            // Check for expired Dutch Auction (Auto-Reclaim Logic)
+            if (nft.dutchAuction && nft.dutchAuction.isExpired) {
+                console.log('Finalizing expired Dutch auction...');
+                toast.loading('Claiming back NFT from expired auction...');
+                try {
+                    const reclaimTx = await tradingContract.finalizeDutchAuction(nft.tokenId);
+                    await reclaimTx.wait();
+                    toast.dismiss();
+                    toast.success('NFT claimed successfully! Proceeding to create new auction...');
+                } catch (err) {
+                    console.error('Failed to reclaim:', err);
+                    toast.dismiss();
+                    toast.error('Failed to claim NFT. Please try again.');
+                    setIsProcessing(false);
+                    return;
+                }
+            }
+
             // Check for approval
             const approvedAddress = await pokemonContract.getApproved(nft.tokenId);
             const ownerAddress = await pokemonContract.ownerOf(nft.tokenId);

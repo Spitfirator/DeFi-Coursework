@@ -8,26 +8,88 @@ function DutchAuctionDisplay({ auction, tokenId, tradingContract, account, onPur
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [isPurchasing, setIsPurchasing] = useState(false);
 
+    const [timeOffset, setTimeOffset] = useState(0);
+
     useEffect(() => {
-        if (!auction || !auction.isActive || !tradingContract) return;
-
-        const updatePrice = async () => {
+        const syncTime = async () => {
             try {
-                const price = await tradingContract.getCurrentDutchPrice(tokenId);
-                setCurrentPrice(ethers.formatEther(price));
+                const provider = tradingContract.runner?.provider || tradingContract.provider;
+                if (!provider) return;
 
-                const remaining = await tradingContract.getDutchAuctionTimeRemaining(tokenId);
-                setTimeRemaining(Number(remaining));
-            } catch (error) {
-                console.error('Error fetching Dutch auction price:', error);
+                const block = await provider.getBlock('latest');
+                const network = await provider.getNetwork();
+                const storageKey = `dutch_auction_offset_${network.chainId}`;
+
+                if (block) {
+                    const now = Math.floor(Date.now() / 1000);
+                    // Calculate current skew: blockTime - localTime
+                    const currentOffset = block.timestamp - now;
+
+                    // Retrieve stored offset (default to 0 or current negative skew)
+                    const stored = localStorage.getItem(storageKey);
+                    const savedOffset = stored ? parseInt(stored) : -Infinity;
+
+                    // Monotonic Sync: Always keep the LARGEST skew seen.
+                    // If block is stale, currentOffset shrinks (becomes more negative/less positive).
+                    // We want to keep the initial positive skew so time progresses from that future point.
+                    // If block advances (new mine), currentOffset grows/maintains.
+                    const finalOffset = Math.max(savedOffset, currentOffset);
+
+                    // Only apply positive offset (if chain is ahead). 
+                    // If chain is behind (finalOffset < 0), treat as 0 (use local clock).
+                    const effectiveOffset = Math.max(0, finalOffset);
+
+                    localStorage.setItem(storageKey, finalOffset.toString());
+                    setTimeOffset(effectiveOffset);
+                }
+            } catch (err) {
+                console.error("Error syncing time:", err);
             }
         };
 
-        updatePrice();
-        const interval = setInterval(updatePrice, 1000); // Update every second
+        syncTime();
+    }, [tradingContract]);
+
+    useEffect(() => {
+        if (!auction || !auction.isActive) return;
+
+        const updateState = () => {
+            const now = Math.floor(Date.now() / 1000) + timeOffset;
+            const startTime = Number(auction.startTime);
+            const duration = Number(auction.duration);
+
+            // Allow small negative values to show "just starting" instead of 0
+            // But clamp to 0 for calculation safety if needed
+            const timeElapsed = Math.max(0, now - startTime);
+            const remaining = Math.max(0, duration - timeElapsed);
+
+            setTimeRemaining(remaining);
+
+            const startPrice = parseFloat(auction.startingPrice);
+            const reservePrice = parseFloat(auction.reservePrice);
+
+            let price;
+            if (timeElapsed >= duration) {
+                price = reservePrice;
+            } else if (timeElapsed <= 0) {
+                price = startPrice;
+            } else {
+                const totalDrop = startPrice - reservePrice;
+                const currentDrop = totalDrop * (timeElapsed / duration);
+                price = startPrice - currentDrop;
+            }
+
+            // Ensure price doesn't go below reserve
+            price = Math.max(price, reservePrice);
+
+            setCurrentPrice(price.toString());
+        };
+
+        updateState();
+        const interval = setInterval(updateState, 1000);
 
         return () => clearInterval(interval);
-    }, [auction, tokenId, tradingContract]);
+    }, [auction, timeOffset]);
 
     const formatTime = (seconds) => {
         if (seconds <= 0) return 'Ended';
@@ -124,14 +186,14 @@ function DutchAuctionDisplay({ auction, tokenId, tradingContract, account, onPur
 
             {/* Buy Button - hidden for the seller */}
             {account?.toLowerCase() !== auction.seller?.toLowerCase() && (
-              <button
-                  onClick={handleBuy}
-                  disabled={isPurchasing || timeRemaining <= 0}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2"
-              >
-                  <ShoppingCart className="w-5 h-5" />
-                  {isPurchasing ? 'Purchasing...' : timeRemaining <= 0 ? 'Auction Ended' : 'Buy Now'}
-              </button>
+                <button
+                    onClick={handleBuy}
+                    disabled={isPurchasing || timeRemaining <= 0}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2"
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    {isPurchasing ? 'Purchasing...' : timeRemaining <= 0 ? 'Auction Ended' : 'Buy Now'}
+                </button>
             )}
 
             {timeRemaining <= 0 && (

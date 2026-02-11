@@ -885,7 +885,7 @@ function CardDetail() {
                       </div>
                     </td>
                     <td className="py-4 font-mono font-medium">
-                      {event.price ? `${event.price} ETH` : '---'}
+                      {event.price ? (event.type === 'Dutch Auction' ? `${parseFloat(event.price).toFixed(2)} ETH` : `${event.price} ETH`) : '---'}
                     </td>
                     <td className="py-4 text-sm text-gray-400 max-w-[150px] truncate">
                       {event.from ? (

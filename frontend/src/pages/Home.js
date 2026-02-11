@@ -235,7 +235,7 @@ function Home() {
         for (const event of dutchEvents) {
           totalVolume += event.args.price; // DutchAuctionPurchased has price arg
         }
-        setVolume(`${ethers.formatEther(totalVolume)} ETH`);
+        setVolume(`${parseFloat(ethers.formatEther(totalVolume)).toFixed(3)} ETH`);
       } catch (err) {
         setVolume('0 ETH');
       }
