@@ -232,8 +232,9 @@ function revealBid(uint256 tokenId, bytes32 secret) external payable
 
 Bidders reveal their intent by providing the secret and sending ETH. The contract:
 1. Reconstructs the hash from `msg.sender`, `msg.value`, and `secret` to verify it matches the commitment
-2. Validates the auction is still active and has not ended
-3. Places the bid via the internal `_placeBid()` function if verification passes
+2. Enforces that at least 5 minutes (`COMMIT_REVEAL_PERIOD`) have elapsed since the commit
+3. Validates the auction is still active and has not ended
+4. Places the bid via the internal `_placeBid()` function if verification passes
 
 #### Security Properties
 
@@ -243,7 +244,7 @@ Bidders reveal their intent by providing the secret and sending ETH. The contrac
 - The secret prevents replay attacks
 
 **Commit-Reveal Period**:
-- `COMMIT_REVEAL_PERIOD = 5 minutes`: Defines the time window for the commit-reveal process
+- `COMMIT_REVEAL_PERIOD = 5 minutes`: Enforced minimum delay between commit and reveal — `revealBid()` rejects reveals before this period has elapsed
 
 **Auction Safeguards**:
 - Bids must meet the 5% minimum increment over the current highest bid
