@@ -5,6 +5,7 @@ import PokemonCard from '../components/PokemonCard';
 import { useNavigate } from 'react-router-dom';
 import { Loader, AlertCircle, Clock, ArrowRight, ArrowUp, Heart, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 function DayCare() {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ function DayCare() {
       setStakedCards(staked);
     } catch (error) {
       console.error('Failed to load day care data:', error);
-      toast.error('Failed to load data');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load data');
     } finally {
       setLoading(false);
     }

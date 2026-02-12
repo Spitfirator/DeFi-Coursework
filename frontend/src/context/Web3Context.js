@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 import PokemonCardABI from '../contracts/PokemonCard.json';
 import PokemonTradingABI from '../contracts/PokemonTrading.json';
 import DayCareABI from '../contracts/DayCare.json';
@@ -121,7 +122,7 @@ export function Web3Provider({ children }) {
       }
     } catch (error) {
       console.error('Failed to connect wallet:', error);
-      toast.error('Failed to connect wallet');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to connect wallet');
     } finally {
       setIsConnecting(false);
     }
@@ -187,7 +188,7 @@ export function Web3Provider({ children }) {
             toast.success('Account changed');
           } catch (error) {
             console.error('Failed to switch account:', error);
-            toast.error('Failed to switch account');
+            toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to switch account');
           }
         } else {
           disconnectWallet();
@@ -218,6 +219,9 @@ export function Web3Provider({ children }) {
           }
         } catch (error) {
           console.error('Auto-reconnect failed:', error);
+          if (isStaleBlockError(error)) {
+            toast.error(STALE_BLOCK_MESSAGE);
+          }
         }
       };
 

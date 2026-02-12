@@ -3,6 +3,7 @@ import { useWeb3 } from '../context/Web3Context';
 import PokemonCard from '../components/PokemonCard';
 import { Loader, AlertCircle, Heart, Egg, Clock, Sparkles, X, Check, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 function Hatchery() {
   const {
@@ -104,7 +105,7 @@ function Hatchery() {
       setSessions(sessionData.reverse()); // Newest first
     } catch (error) {
       console.error('Failed to load hatchery data:', error);
-      toast.error('Failed to load data');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load data');
     } finally {
       setLoading(false);
     }

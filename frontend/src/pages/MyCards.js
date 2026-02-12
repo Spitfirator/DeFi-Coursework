@@ -6,6 +6,7 @@ import DutchAuctionModal from '../components/DutchAuctionModal';
 import { ethers } from 'ethers';
 import { Loader, AlertCircle, Plus, Tag, Gavel, X, DollarSign, TrendingDown, ArrowLeftRight, Check, XCircle, Search, Star, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 function MyCards() {
   const { pokemonContract, tradingContract, account, refreshTrigger, triggerRefresh } = useWeb3();
@@ -157,7 +158,7 @@ function MyCards() {
       setPendingWithdrawal(ethers.formatEther(pending));
     } catch (error) {
       console.error('Failed to load cards:', error);
-      toast.error('Failed to load your cards');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load your cards');
     } finally {
       setLoading(false);
     }

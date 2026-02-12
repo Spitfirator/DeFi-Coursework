@@ -5,6 +5,7 @@ import FilterSidebar from '../components/FilterSidebar';
 import { ethers } from 'ethers';
 import { Search, Loader, AlertCircle, ArrowUpDown, Sparkles, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 function Marketplace() {
   const { pokemonContract, tradingContract, account, refreshTrigger } = useWeb3();
@@ -116,7 +117,7 @@ function Marketplace() {
       setDutchAuctions(dutchAuctionsData);
     } catch (error) {
       console.error('Failed to load market data:', error);
-      toast.error('Failed to load marketplace data');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load marketplace data');
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { Loader, AlertCircle, ArrowRight, ArrowUp, Lock, Clock, ChevronDown, Zap, Flame, Droplet, Leaf, Brain, Ghost, Mountain, Bug, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 const typeColors = {
   Normal:   { from: '#A8A77A', to: '#ACAD99', icon: Star },
@@ -171,7 +172,7 @@ function Evolution() {
       setStakedCards(staked);
     } catch (error) {
       console.error('Failed to load evolution data:', error);
-      toast.error('Failed to load data');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load data');
     } finally {
       setLoading(false);
     }

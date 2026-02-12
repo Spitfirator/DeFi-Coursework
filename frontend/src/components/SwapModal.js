@@ -3,6 +3,7 @@ import { X, ArrowLeftRight, Loader } from 'lucide-react';
 import { useWeb3 } from '../context/Web3Context';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 
 const SwapModal = ({ isOpen, onClose, desiredCard }) => {
     const { account, pokemonContract, tradingContract } = useWeb3();
@@ -82,7 +83,7 @@ const SwapModal = ({ isOpen, onClose, desiredCard }) => {
             setMyCards(cards);
         } catch (error) {
             console.error('Error loading cards:', error);
-            toast.error('Failed to load your cards');
+            toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load your cards');
         } finally {
             setLoadingCards(false);
         }

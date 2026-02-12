@@ -9,6 +9,7 @@ import {
   Gavel, ShoppingCart, X, RefreshCw, TrendingDown, DollarSign, Activity, List, StickyNote
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isStaleBlockError, STALE_BLOCK_MESSAGE } from '../utils/errors';
 import DutchAuctionDisplay from '../components/DutchAuctionDisplay';
 import ListingModal from '../components/ListingModal';
 import AuctionModal from '../components/AuctionModal';
@@ -216,7 +217,7 @@ function CardDetail() {
 
     } catch (error) {
       console.error('Failed to load card:', error);
-      toast.error('Failed to load card details');
+      toast.error(isStaleBlockError(error) ? STALE_BLOCK_MESSAGE : 'Failed to load card details');
     } finally {
       setLoading(false);
     }
