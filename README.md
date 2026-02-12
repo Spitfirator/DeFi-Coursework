@@ -2,6 +2,26 @@
 
 A decentralized NFT marketplace for trading Pokemon NFTs with multiple sale mechanisms, breeding, evolution, and front-running protection.
 
+## Tech Stack
+
+- **Smart Contracts**: Solidity 0.8.20, OpenZeppelin Contracts v5 (ERC721, AccessControl, Pausable, ReentrancyGuard)
+- **Development**: Hardhat, ethers.js v6, Hardhat Toolbox, solidity-coverage, hardhat-gas-reporter
+- **Frontend**: React 18, React Router v6, Tailwind CSS, ethers.js v6
+- **Storage**: IPFS (NFT metadata), on-chain (Pokemon stats)
+- **Wallet**: MetaMask (via BrowserProvider)
+
+## Architecture Overview
+
+For detailed architecture diagrams, see the PDF report.
+
+The application follows a three-layer architecture: smart contracts on a local Hardhat blockchain, a React frontend, and MetaMask as the wallet bridge.
+
+**Smart Contract Layer** — Five Solidity contracts deployed to Hardhat's local network. `PokemonCard` is the central ERC721 NFT contract that all other contracts interact with via the `IPokemonCardStats` interface. `PokemonTrading` handles marketplace operations (listings, auctions, swaps). Three auxiliary contracts — `DayCare`, `EvolutionManager`, and `Hatchery` — provide staking, evolution, and breeding mechanics respectively. Inter-contract access is governed by role-based permissions: `MINTER_ROLE` (granted to Hatchery for egg minting), `TRAINER_ROLE` (granted to DayCare, EvolutionManager, and Hatchery for stat updates), and `PAUSER_ROLE` (granted to admin for emergency stops).
+
+**Frontend Layer** — A React 18 single-page application using `Web3Context` for wallet and contract state management and `CartContext` for shopping cart state. Nine pages cover the full feature set: Home (landing + trending), Marketplace (buy/sell), Collection (browse all NFTs), My Cards (personal portfolio), Card Detail, DayCare, Evolution, and Hatchery. Reusable components include modals for listing, auctioning, and swapping, a filter sidebar with search, and a cart overlay with batch checkout.
+
+**Wallet Integration** — MetaMask's `BrowserProvider` handles both reads and transaction signing. When Hardhat node restarts, MetaMask can retain stale block numbers causing "invalid block tag" errors. The frontend detects these errors and displays a user-facing message prompting the user to force-quit their browser and reopen it for easiest fix. The frontend also listens for account and chain changes, auto-reconnects on page load, and prompts network switching to the Hardhat local network (chain ID 31337). 
+
 ## Deployed Contracts (Local Testnet)
 
 All contracts are deployed via `scripts/deploy.js` to the Hardhat local network (localhost:8545):
@@ -101,6 +121,39 @@ Breeding contract with 3-stage lifecycle:
 - Pseudo-random genetics with parent stat averaging and variance
 - Emergency pause mechanism with PAUSER_ROLE
 
+## Frontend
+
+### Wallet Connection
+- MetaMask integration with auto-reconnect on page load
+- Automatic network switching to Hardhat local network (chain ID 31337)
+- Account and chain change detection with state refresh
+- Blockchain clock synchronization to avoid timestamp mismatches
+- Stale block cache error detection with user-facing guidance
+
+### Marketplace UI
+- Browsable card grid with real-time updates via contract event listeners (`Listed`, `Sale`, `AuctionCreated`, `BidPlaced`, `AuctionFinalized`, etc.)
+- Advanced filtering: status (Buy Now, Auctions, Dutch Auctions), price range, rarity, and all 18 Pokemon types
+- Search by name with sorting options (price, ID)
+- Trending section on the home page based on recent bid and sale activity
+
+### Trading Interfaces
+- **Fixed-Price Listing Modal** — set price and list instantly
+- **English Auction Modal** — configure reserve price, duration, and starting bid
+- **Dutch Auction Modal** — set start price, reserve price, and duration for declining-price sales
+- **Swap Modal** — propose direct NFT-for-NFT exchanges with accept/reject flow
+
+### Shopping Cart
+- Add fixed-price listings to cart from the marketplace
+- Cart modal with item list, total price in ETH, and batch checkout (sequential purchases)
+- Per-item success/failure tracking during checkout
+- Cart badge in navbar; auto-clears on account switch
+
+### Mobile-Responsive Design
+- Tailwind CSS responsive breakpoints (`sm:`, `md:`, `lg:`, `xl:`) throughout all pages
+- Collapsible hamburger menu on mobile
+- Filter sidebar switches between mobile drawer overlay and desktop inline panel
+- Responsive grid layouts for card displays
+
 ## Design Decisions
 
 ### PokemonCard Interface
@@ -138,7 +191,7 @@ OpenZeppelin `ReentrancyGuard` is applied to all state-changing functions across
 Solidity 0.8.20 provides built-in overflow/underflow checks on all arithmetic operations.
 
 ### Access Control
-Role-based access control using OpenZeppelin `AccessControl` and `Ownable`:
+Role-based access control using OpenZeppelin `AccessControl` and `Ownable`, enforced via Solidity function modifiers (`onlyRole()`, `onlyOwner`, `whenNotPaused`, `nonReentrant`) applied directly on all state-changing functions:
 - **MINTER_ROLE**: Controls NFT minting (granted to deploy script and Hatchery)
 - **PAUSER_ROLE**: Controls emergency pause (granted to admin)
 - **TRAINER_ROLE**: Controls stat updates (granted to DayCare, EvolutionManager, Hatchery)
@@ -260,6 +313,9 @@ The marketplace checks `isEgg` via the `IPokemonCardStats` interface and reverts
 ### Platform Fee Separation
 Platform fees are tracked separately via `accumulatedFees` and can only be withdrawn by the admin via `withdrawFees()`. This keeps user funds and platform revenue cleanly separated.
 
+### Event Emission
+All contracts emit events for every state-changing operation, enabling the frontend to update in real time. Key events include `Listed`, `Sale`, `AuctionCreated`, `BidPlaced`, `AuctionFinalized`, `ListingCancelled`, `AuctionCancelled`, `PokemonStaked`, `PokemonUnstaked`, `PokemonEvolved`, `BreedingStarted`, `EggMinted`, `PokemonHatched`, and `EmergencyStop`/`EmergencyResume`.
+
 ### Custom Errors
 Gas-efficient custom errors are used instead of `require` strings throughout all contracts.
 
@@ -315,7 +371,9 @@ npx hardhat test
 # Deploy locally
 npx hardhat node                                       # Terminal 1
 npx hardhat run scripts/deploy.js --network localhost  # Terminal 2
-cd frontend && npm start                               # Terminal 3
+
+# Start frontend
+cd frontend && npm install && npm start                # Terminal 3
 ```
 
 ### Scripts
@@ -345,6 +403,16 @@ https://ipfs.io/ipfs/bafybeiely5mtvdm3yq3js7lwk7m4sbeialgwapibe7jpv3qpomxmfi5ly4
 ```
 https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png
 ```
+
+## Optional Enhancements
+
+The following optional features have been implemented:
+
+- **Dutch Auctions** — Declining-price auction mechanism in `PokemonTrading.sol` with linear price decay
+- **IPFS Integration** — All 100 NFT metadata files stored on IPFS with on-chain `tokenURI` resolution
+- **Batch Trades** — Shopping cart with batch checkout for purchasing multiple fixed-price listings in one session
+- **Mobile-Responsive Design** — Full Tailwind CSS responsive layout across all pages
+- **Advanced Search and Filtering** — Filter by status, price range, rarity, and Pokemon type; sort by price or ID; search by name
 
 ## Individual Contributions
 
