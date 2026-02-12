@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
 import PokemonCardABI from '../contracts/PokemonCard.json';
@@ -15,31 +15,6 @@ const DAYCARE_ADDRESS = process.env.REACT_APP_DAYCARE_ADDRESS || '';
 const EVOLUTION_ADDRESS = process.env.REACT_APP_EVOLUTION_ADDRESS || '';
 const HATCHERY_ADDRESS = process.env.REACT_APP_HATCHERY_ADDRESS || '';
 const EXPECTED_CHAIN_ID = 31337; // Hardhat local network
-const RPC_URL = 'http://127.0.0.1:8545';
-
-// Singleton direct provider — fallback for when MetaMask has stale block cache
-const directProvider = new ethers.JsonRpcProvider(RPC_URL);
-
-// Check if MetaMask's cached block number is ahead of the actual chain (stale after node restart)
-async function isMetaMaskBlockCacheStale(browserProvider) {
-  try {
-    const mmBlock = await browserProvider.send('eth_blockNumber', []);
-    const realBlock = await directProvider.send('eth_blockNumber', []);
-    return parseInt(mmBlock, 16) > parseInt(realBlock, 16);
-  } catch {
-    return true;
-  }
-}
-
-// Only patch reads to bypass MetaMask if its cache is stale
-function patchProviderReads(browserProvider, useDirectReads) {
-  if (!useDirectReads) return browserProvider;
-  browserProvider.call = directProvider.call.bind(directProvider);
-  browserProvider.getBlock = directProvider.getBlock.bind(directProvider);
-  browserProvider.getBlockNumber = directProvider.getBlockNumber.bind(directProvider);
-  browserProvider.getLogs = directProvider.getLogs.bind(directProvider);
-  return browserProvider;
-}
 
 export function Web3Provider({ children }) {
   const [account, setAccount] = useState(null);
@@ -56,12 +31,6 @@ export function Web3Provider({ children }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [clockOffset, setClockOffset] = useState(0);
   const [blockTime, setBlockTime] = useState(Math.floor(Date.now() / 1000));
-  const providerRef = useRef(null);
-
-  // Keep ref in sync with state so event handlers can access the current provider
-  useEffect(() => {
-    providerRef.current = provider;
-  }, [provider]);
 
   // Call this after any transaction to trigger UI refresh across all pages
   const triggerRefresh = useCallback(() => {
@@ -132,18 +101,8 @@ export function Web3Provider({ children }) {
     setIsConnecting(true);
 
     try {
-      // Destroy old provider to clear stale block cache
-      if (providerRef.current) {
-        providerRef.current.destroy();
-      }
-
       const browserProvider = new ethers.BrowserProvider(window.ethereum);
       const accounts = await browserProvider.send('eth_requestAccounts', []);
-
-      // Check staleness AFTER MetaMask connection is established
-      const stale = await isMetaMaskBlockCacheStale(browserProvider);
-      patchProviderReads(browserProvider, stale);
-
       const network = await browserProvider.getNetwork();
       const signerInstance = await browserProvider.getSigner();
 
@@ -169,9 +128,6 @@ export function Web3Provider({ children }) {
   };
 
   const disconnectWallet = () => {
-    if (providerRef.current) {
-      providerRef.current.destroy();
-    }
     setAccount(null);
     setProvider(null);
     setSigner(null);
@@ -216,18 +172,8 @@ export function Web3Provider({ children }) {
         if (accounts.length > 0) {
           // Reinitialize everything when account changes
           try {
-            // Destroy old provider to clear stale block cache
-            if (providerRef.current) {
-              providerRef.current.destroy();
-            }
-
             const browserProvider = new ethers.BrowserProvider(window.ethereum);
             const network = await browserProvider.getNetwork();
-
-            // Check staleness AFTER MetaMask connection is established
-            const stale = await isMetaMaskBlockCacheStale(browserProvider);
-            patchProviderReads(browserProvider, stale);
-
             const signerInstance = await browserProvider.getSigner();
 
             setProvider(browserProvider);
@@ -260,8 +206,6 @@ export function Web3Provider({ children }) {
             // Wallet is already connected, silently reconnect
             const browserProvider = new ethers.BrowserProvider(window.ethereum);
             const network = await browserProvider.getNetwork();
-            const stale = await isMetaMaskBlockCacheStale(browserProvider);
-            patchProviderReads(browserProvider, stale);
             const signerInstance = await browserProvider.getSigner();
 
             setProvider(browserProvider);
