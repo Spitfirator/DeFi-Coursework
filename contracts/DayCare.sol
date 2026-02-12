@@ -27,20 +27,6 @@ interface IPokemonCard is IERC721 {
 
     function getPokemonStats(uint256 tokenId) external view returns (PokemonStats memory);
     function updateStats(uint256 tokenId, uint256 newLevel, uint256 newHp, uint256 newAttack, uint256 newDefense) external;
-    function burnAndMint(
-        address to,
-        uint256 oldTokenId,
-        string memory uri,
-        string memory name,
-        string memory pokemonType,
-        string memory rarity,
-        uint256 hp,
-        uint256 attack,
-        uint256 defense,
-        uint256 speed,
-        uint256 level,
-        uint256 generation
-    ) external returns (uint256);
 }
 
 /**

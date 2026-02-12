@@ -49,7 +49,6 @@ contract PokemonCard is
 
     // ============ Mappings ============
     mapping(uint256 => PokemonStats) public pokemonStats;
-    mapping(address => uint256) public pendingWithdrawals;
 
     // ============ Events ============
     event PokemonMinted(
@@ -89,9 +88,9 @@ contract PokemonCard is
     }
 
     // ============ Minting Functions ============
-    
+
     /**
-     * @dev Mint a new Pokemon card NFT
+     * @dev Mint a new Pokemon card NFT (public, requires payment)
      * @param to Address to mint to
      * @param uri Token URI for metadata
      * @param name Pokemon name
@@ -115,35 +114,8 @@ contract PokemonCard is
         uint256 speed,
         uint256 generation
     ) public payable whenNotPaused nonReentrant returns (uint256) {
-        if (to == address(0)) revert ZeroAddress();
-        if (_nextTokenId >= maxSupply) revert MaxSupplyReached();
-        if (msg.value < mintPrice && !hasRole(MINTER_ROLE, msg.sender)) {
-            revert InsufficientPayment();
-        }
-        if (hp == 0 || attack == 0 || defense == 0) revert InvalidStats();
-
-        uint256 tokenId = _nextTokenId++;
-        
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-
-        pokemonStats[tokenId] = PokemonStats({
-            name: name,
-            pokemonType: pokemonType,
-            rarity: rarity,
-            hp: hp,
-            attack: attack,
-            defense: defense,
-            speed: speed,
-            generation: generation,
-            level: 1,
-            exists: true,
-            isEgg: false
-        });
-
-        emit PokemonMinted(tokenId, to, name, rarity);
-
-        return tokenId;
+        if (msg.value < mintPrice) revert InsufficientPayment();
+        return _mintInternal(to, uri, name, pokemonType, rarity, hp, attack, defense, speed, generation);
     }
 
     /**
@@ -162,12 +134,31 @@ contract PokemonCard is
         uint256 speed,
         uint256 generation
     ) external onlyRole(MINTER_ROLE) whenNotPaused nonReentrant returns (uint256) {
+        return _mintInternal(to, uri, name, pokemonType, rarity, hp, attack, defense, speed, generation);
+    }
+
+    /**
+     * @dev Shared minting logic used by both mintPokemon and adminMint.
+     * Validates inputs, mints the NFT, stores on-chain metadata, and emits an event.
+     */
+    function _mintInternal(
+        address to,
+        string memory uri,
+        string memory name,
+        string memory pokemonType,
+        string memory rarity,
+        uint256 hp,
+        uint256 attack,
+        uint256 defense,
+        uint256 speed,
+        uint256 generation
+    ) internal returns (uint256) {
         if (to == address(0)) revert ZeroAddress();
         if (_nextTokenId >= maxSupply) revert MaxSupplyReached();
         if (hp == 0 || attack == 0 || defense == 0) revert InvalidStats();
 
         uint256 tokenId = _nextTokenId++;
-        
+
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
 
@@ -186,7 +177,6 @@ contract PokemonCard is
         });
 
         emit PokemonMinted(tokenId, to, name, rarity);
-
         return tokenId;
     }
 

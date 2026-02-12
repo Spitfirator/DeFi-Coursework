@@ -170,6 +170,13 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
     error DutchAuctionNotActive();
     error DutchAuctionExpired();
     error TokenInDutchAuction();
+    error RevealTooEarly();
+    error CannotSwapOwnCard();
+    error MustOwnOfferedCard();
+    error MarketplaceNotApproved();
+    error DuplicateSwapRequest();
+    error SwapRequestNotActive();
+    error RequesterNoLongerOwnsToken();
 
     // ============ Constructor ============
     constructor(address _pokemonContract, uint256 _platformFee) {
@@ -384,8 +391,8 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (block.timestamp >= auction.endTime) revert AuctionEnded();
         if (commitment.commitHash == bytes32(0)) revert CommitmentNotFound();
         if (commitment.revealed) revert CommitmentAlreadyRevealed();
+        if (block.timestamp < commitment.commitTime + COMMIT_REVEAL_PERIOD) revert RevealTooEarly();
 
-        // Verify the commitment
         bytes32 expectedHash = keccak256(abi.encodePacked(msg.sender, msg.value, secret));
         if (expectedHash != commitment.commitHash) revert InvalidReveal();
 
@@ -804,22 +811,20 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
      * @param offeredTokenId The token the requester offers
      */
     function createSwapRequest(uint256 desiredTokenId, uint256 offeredTokenId) external nonReentrant whenNotPaused {
-        require(pokemonContract.ownerOf(desiredTokenId) != msg.sender, "Cannot swap for a card you already own");
-        require(pokemonContract.ownerOf(offeredTokenId) == msg.sender, "You must own the card you're offering");
-        
-        // Check if marketplace is approved to transfer the offered token
-        require(
-            pokemonContract.getApproved(offeredTokenId) == address(this) || pokemonContract.isApprovedForAll(msg.sender, address(this)),
-            "Marketplace not approved for your NFT"
-        );
+        if (pokemonContract.ownerOf(desiredTokenId) == msg.sender) revert CannotSwapOwnCard();
+        if (pokemonContract.ownerOf(offeredTokenId) != msg.sender) revert MustOwnOfferedCard();
 
-        // Check for duplicate requests
+        if (
+            pokemonContract.getApproved(offeredTokenId) != address(this) &&
+            !pokemonContract.isApprovedForAll(msg.sender, address(this))
+        ) revert MarketplaceNotApproved();
+
         SwapRequest[] storage requests = swapRequests[desiredTokenId];
         for (uint256 i = 0; i < requests.length; i++) {
-            if (requests[i].isActive && 
-                requests[i].requester == msg.sender && 
+            if (requests[i].isActive &&
+                requests[i].requester == msg.sender &&
                 requests[i].offeredTokenId == offeredTokenId) {
-                revert("You already have an active swap request for this card");
+                revert DuplicateSwapRequest();
             }
         }
 
@@ -843,12 +848,11 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         if (pokemonContract.ownerOf(desiredTokenId) != msg.sender) revert NotTokenOwner();
 
         SwapRequest storage request = swapRequests[desiredTokenId][requestIndex];
-        if (!request.isActive) revert("Request not active");
+        if (!request.isActive) revert SwapRequestNotActive();
 
-        // Verify ownership of offered token still holds
         if (pokemonContract.ownerOf(request.offeredTokenId) != request.requester) {
             request.isActive = false;
-            revert("Requester no longer owns token");
+            revert RequesterNoLongerOwnsToken();
         }
 
         // Execute Swap
@@ -886,6 +890,4 @@ contract PokemonTrading is AccessControl, Pausable, ReentrancyGuard {
         return swapRequests[tokenId];
     }
 
-    // ============ Receive Function ============
-    receive() external payable {}
 }

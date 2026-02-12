@@ -93,6 +93,22 @@ export function Web3Provider({ children }) {
     }
   }, []);
 
+  // Shared helper: create provider + signer, set all wallet state, init contracts
+  const setupWalletState = useCallback(async (accounts) => {
+    const browserProvider = new ethers.BrowserProvider(window.ethereum);
+    const network = await browserProvider.getNetwork();
+    const signerInstance = await browserProvider.getSigner();
+
+    setProvider(browserProvider);
+    setSigner(signerInstance);
+    setAccount(accounts[0]);
+    setChainId(Number(network.chainId));
+    setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
+
+    await initializeContracts(signerInstance);
+    return Number(network.chainId);
+  }, [initializeContracts]);
+
   const connectWallet = async () => {
     if (!window.ethereum) {
       toast.error('Please install MetaMask to use this dApp');
@@ -102,20 +118,10 @@ export function Web3Provider({ children }) {
     setIsConnecting(true);
 
     try {
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await browserProvider.send('eth_requestAccounts', []);
-      const network = await browserProvider.getNetwork();
-      const signerInstance = await browserProvider.getSigner();
+      const accounts = await new ethers.BrowserProvider(window.ethereum).send('eth_requestAccounts', []);
+      const detectedChainId = await setupWalletState(accounts);
 
-      setProvider(browserProvider);
-      setSigner(signerInstance);
-      setAccount(accounts[0]);
-      setChainId(Number(network.chainId));
-      setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
-
-      await initializeContracts(signerInstance);
-
-      if (Number(network.chainId) !== EXPECTED_CHAIN_ID) {
+      if (detectedChainId !== EXPECTED_CHAIN_ID) {
         toast.error('Please switch to Hardhat local network (Chain ID: 31337)');
       } else {
         toast.success('Wallet connected!');
@@ -171,20 +177,8 @@ export function Web3Provider({ children }) {
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', async (accounts) => {
         if (accounts.length > 0) {
-          // Reinitialize everything when account changes
           try {
-            const browserProvider = new ethers.BrowserProvider(window.ethereum);
-            const network = await browserProvider.getNetwork();
-            const signerInstance = await browserProvider.getSigner();
-
-            setProvider(browserProvider);
-            setSigner(signerInstance);
-            setAccount(accounts[0]);
-            setChainId(Number(network.chainId));
-            setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
-
-            await initializeContracts(signerInstance);
-
+            await setupWalletState(accounts);
             toast.success('Account changed');
           } catch (error) {
             console.error('Failed to switch account:', error);
@@ -204,18 +198,7 @@ export function Web3Provider({ children }) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
-            // Wallet is already connected, silently reconnect
-            const browserProvider = new ethers.BrowserProvider(window.ethereum);
-            const network = await browserProvider.getNetwork();
-            const signerInstance = await browserProvider.getSigner();
-
-            setProvider(browserProvider);
-            setSigner(signerInstance);
-            setAccount(accounts[0]);
-            setChainId(Number(network.chainId));
-            setIsCorrectNetwork(Number(network.chainId) === EXPECTED_CHAIN_ID);
-
-            await initializeContracts(signerInstance);
+            await setupWalletState(accounts);
           }
         } catch (error) {
           console.error('Auto-reconnect failed:', error);
@@ -234,7 +217,7 @@ export function Web3Provider({ children }) {
         window.ethereum.removeAllListeners('chainChanged');
       }
     };
-  }, [initializeContracts]);
+  }, [initializeContracts, setupWalletState]);
 
   const value = {
     account,

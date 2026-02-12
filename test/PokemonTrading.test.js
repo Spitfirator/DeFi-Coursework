@@ -398,6 +398,9 @@ describe("PokemonTrading", function () {
         .to.emit(trading, "BidCommitted")
         .withArgs(0, bidder1.address, commitHash);
 
+      // Advance past the 5-minute commit-reveal period
+      await time.increase(5 * 60);
+
       await expect(trading.connect(bidder1).revealBid(0, secret, { value: bidAmount }))
         .to.emit(trading, "BidPlaced")
         .withArgs(0, bidder1.address, bidAmount);
@@ -420,6 +423,9 @@ describe("PokemonTrading", function () {
       const commitHash = await trading.generateCommitHash(bidder1.address, bidAmount, secret);
 
       await trading.connect(bidder1).commitBid(0, commitHash);
+
+      // Advance past the 5-minute commit-reveal period
+      await time.increase(5 * 60);
 
       await expect(
         trading.connect(bidder1).revealBid(0, wrongSecret, { value: bidAmount })

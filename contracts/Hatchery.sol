@@ -155,15 +155,10 @@ contract Hatchery is AccessControl, Pausable, ReentrancyGuard {
         if (_isLegendary(stats1.rarity)) revert CannotBreedLegendary();
         if (_isLegendary(stats2.rarity)) revert CannotBreedLegendary();
 
-        // Transfer both to this contract (escrow)
-        pokemonCard.transferFrom(msg.sender, address(this), parent1Id);
-        pokemonCard.transferFrom(msg.sender, address(this), parent2Id);
-
-        // Mark as locked
+        // Effects: update state BEFORE external calls (CEI pattern)
         lockedTokens[parent1Id] = true;
         lockedTokens[parent2Id] = true;
 
-        // Snapshot parent stats
         uint256 sessionId = sessionCounter++;
 
         sessions[sessionId] = BreedingSession({
@@ -199,6 +194,10 @@ contract Hatchery is AccessControl, Pausable, ReentrancyGuard {
         });
 
         _userSessions[msg.sender].push(sessionId);
+
+        // Interactions: external transfers after all state is finalised
+        pokemonCard.transferFrom(msg.sender, address(this), parent1Id);
+        pokemonCard.transferFrom(msg.sender, address(this), parent2Id);
 
         emit BreedingStarted(sessionId, msg.sender, parent1Id, parent2Id);
 
