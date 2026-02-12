@@ -453,6 +453,7 @@ function MyCards() {
       toast.loading('Withdrawing funds...');
       const tx = await tradingContract.withdraw();
       await tx.wait();
+      toast.dismiss();
       toast.success('Withdrawal successful!');
       triggerRefresh();
     } catch (error) {
